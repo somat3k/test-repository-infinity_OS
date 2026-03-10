@@ -6,7 +6,8 @@ The data layer owns archival policies, storage adapters, transformation pipeline
 
 - Hot/warm/cold archival tiers per dimension and project
 - Retention settings and legal holds per artifact class
-- Storage adapters (local fs, object store, database-backed) with uniform API
+- Storage adapters (local fs, object store, database-backed, IPFS) with uniform API
+- IPFS storage for TeraForms, contracts, licenses, certifications, and legal/regulatory documents (tier 2 persistent)
 - Dataset versioning (semantic tags + immutable snapshots)
 - Hash-chain integrity verification and restoration checks
 - Provenance linking: artifact → producing task → agent → controller → node graph

@@ -41,7 +41,7 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 ## D. Data Archiving and Storage
 - [x] Define archival policies (hot/warm/cold tiers) per dimension/project. (Owner: copilot, 2026-03-10) → data/README.md
 - [x] Define retention settings and legal holds (per artifact class). (Owner: copilot, 2026-03-10) → data/README.md
-- [x] Implement storage adapters (local fs, object store, db-backed) with uniform API. (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Implement storage adapters (local fs, object store, db-backed, IPFS for legal/regulatory artifacts) with uniform API. (Owner: copilot, 2026-03-10) → data/README.md
 - [x] Implement integrity verification (hash chains, signatures optional) and restoration checks. (Owner: copilot, 2026-03-10) → data/README.md
 - [x] Add provenance linking (artifact → producing task → agent → controller → node graph). (Owner: copilot, 2026-03-10) → data/README.md
 - [x] Implement dataset versioning (semantic tags + immutable snapshots). (Owner: copilot, 2026-03-10) → data/README.md

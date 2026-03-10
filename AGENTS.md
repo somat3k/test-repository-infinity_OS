@@ -115,6 +115,7 @@ Owns:
 - dataset classification/transformation governance,
 - retention and legal hold policies,
 - tiered storage, deduplication, and encryption-at-rest requirements,
+- IPFS-backed storage for TeraForms, contracts, licenses, certifications, and legal/regulatory documents,
 - backup/restore workflows and integrity verification.
 
 Must guarantee:
@@ -287,7 +288,7 @@ Must guarantee:
 6. Library/package pinning.
 7. Vulnerability/license scanning.
 8. Dataset cataloging and tagging (versioned snapshots + semantic tags).
-9. Retention and archival automation (tiered storage, deduplication, encryption-at-rest).
+9. Retention and archival automation (tiered storage, deduplication, encryption-at-rest, IPFS pinning for legal/regulatory artifacts).
 10. Backup/restore workflows with integrity verification and ingest/query/restore benchmarks.
 
 ### 4.11 Blockchain + HTTP Nodes/Agents (10)
