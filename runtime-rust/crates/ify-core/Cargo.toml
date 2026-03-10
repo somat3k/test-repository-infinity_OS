@@ -1,0 +1,16 @@
+[package]
+name        = "ify-core"
+description = "infinityOS — shared types: TaskId, DimensionId, ArtifactId, capabilities, error kinds"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+authors.workspace     = true
+repository.workspace  = true
+rust-version.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+serde     = { workspace = true }
+uuid      = { workspace = true }
+tracing   = { workspace = true }
+bitflags  = { version = "2", features = ["serde"] }

@@ -1,0 +1,16 @@
+[package]
+name        = "ify-executor"
+description = "infinityOS — task execution engine: lifecycle, scheduling, cancellation, retries"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+authors.workspace     = true
+repository.workspace  = true
+rust-version.workspace = true
+
+[dependencies]
+ify-core  = { workspace = true }
+tokio     = { workspace = true }
+thiserror = { workspace = true }
+anyhow    = { workspace = true }
+tracing   = { workspace = true }
