@@ -13,7 +13,7 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [ ] Add validation for invalid dimensional mappings.
 
 ## C. C Kernel and Boost Layer
-- [ ] Establish kernel crate/library layout in C.
+- [ ] Establish kernel library layout in C.
 - [ ] Implement scheduler/memory baseline primitives.
 - [ ] Add ABI-safe export surface for Rust performer layer.
 

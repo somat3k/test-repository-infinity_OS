@@ -115,9 +115,8 @@ Until full tooling is checked in, follow this target workflow:
   /unit/
   /integration/
   /perf/
-/docs/
-  AGENTS.md
-  TODO.md
+AGENTS.md                  # root-level agent operating instructions
+TODO.md                    # root-level A-Z epic roadmap
 ```
 
 ## 6) Operational Rules
