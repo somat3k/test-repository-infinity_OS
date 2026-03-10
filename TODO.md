@@ -3,9 +3,9 @@
 Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 
 ## A. Architecture Foundation
-- [ ] Define layered architecture map (kernel, runtime, canvas, data, deploy).
-- [ ] Freeze module boundaries and dependency rules.
-- [ ] Publish system context and component diagrams.
+- [x] Define layered architecture map (kernel, runtime, canvas, data, deploy). (Owner: copilot, 2026-03-10)
+- [x] Freeze module boundaries and dependency rules. (Owner: copilot, 2026-03-10)
+- [x] Publish system context and component diagrams. (Owner: copilot, 2026-03-10)
 
 ## B. blockControllerGenerator Regime
 - [ ] Specify dimensional block controller contracts.

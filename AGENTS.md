@@ -14,6 +14,46 @@ Core implementation split:
 - **C**: kernel and low-level boost layer (performance-critical, system-facing paths).
 - **Rust**: performer/runtime layer (safe orchestration, task execution, agent flows).
 
+## 1.1 Architecture Foundation (Epic A)
+
+### Layered Architecture Map
+- **Kernel (C)**: memory, scheduling, and system-facing primitives. No dependencies.
+- **Performer Runtime (Rust)**: orchestration and task execution. Depends on Kernel via FFI.
+- **Canvas**: node graph and interaction contracts. Depends on Performer Runtime.
+- **Data**: archive/store/transform pipelines. Depends on Performer Runtime.
+- **Deploy**: deployment adapters and workload targets. Depends on Performer Runtime and Data.
+- **Agents**: templates, policies, and execution flows. Depends on Canvas and Performer Runtime.
+
+### Module Boundaries & Dependency Rules
+1. Dependencies flow downward only; no layer may depend on a layer above it.
+2. Kernel exposes an ABI-stable surface consumed only by the Performer Runtime.
+3. Canvas, Data, Deploy, and Agents integrate through the Performer Runtime; direct cross-layer calls are forbidden.
+4. Cross-layer interfaces must be documented before implementation and tracked in TODO items.
+
+### System Context Diagram
+```mermaid
+flowchart LR
+  User([User]) --> Canvas
+  External[External Tools] --> Deploy
+  subgraph infinityOS
+    Canvas --> Runtime[Performer Runtime]
+    Data --> Runtime
+    Agents --> Runtime
+    Runtime --> Kernel
+    Deploy --> Runtime
+  end
+```
+
+### Component Diagram
+```mermaid
+flowchart TB
+  Kernel --> Runtime
+  Runtime --> Canvas
+  Runtime --> Data
+  Runtime --> Agents
+  Runtime --> Deploy
+```
+
 ## 2) Agent Roles (Who)
 
 ### 2.1 Kernel Agent (C)
