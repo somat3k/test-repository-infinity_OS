@@ -4,6 +4,7 @@ members = [
     "crates/ify-core",
     "crates/ify-executor",
     "crates/ify-ffi",
+    "crates/ify-controller",
 ]
 
 [workspace.package]
@@ -29,6 +30,7 @@ uuid       = { version = "1", features = ["v4", "v5", "v7", "serde"] }
 tracing         = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 # Workspace crates
-ify-core     = { path = "crates/ify-core" }
-ify-executor = { path = "crates/ify-executor" }
-ify-ffi      = { path = "crates/ify-ffi" }
+ify-core       = { path = "crates/ify-core" }
+ify-executor   = { path = "crates/ify-executor" }
+ify-ffi        = { path = "crates/ify-ffi" }
+ify-controller = { path = "crates/ify-controller" }

@@ -60,6 +60,14 @@ impl TaskId {
         self.0
     }
 
+    /// Construct a `TaskId` directly from a [`Uuid`].
+    ///
+    /// Useful for deterministic derivation (e.g., UUID v5) in the
+    /// `blockControllerGenerator` task allocator.
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+
     /// Parse a `TaskId` from a UUID string.
     ///
     /// # Errors
@@ -105,6 +113,16 @@ impl DimensionId {
         Self(Uuid::new_v4())
     }
 
+    /// Return the inner UUID.
+    pub fn as_uuid(&self) -> Uuid {
+        self.0
+    }
+
+    /// Construct a `DimensionId` directly from a [`Uuid`].
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+
     /// Parse a `DimensionId` from a UUID string.
     ///
     /// # Errors
@@ -147,6 +165,16 @@ impl ArtifactId {
     /// Create a new `ArtifactId` using UUID v7 (time-ordered).
     pub fn new() -> Self {
         Self(Uuid::now_v7())
+    }
+
+    /// Return the inner UUID.
+    pub fn as_uuid(&self) -> Uuid {
+        self.0
+    }
+
+    /// Construct an `ArtifactId` directly from a [`Uuid`].
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
     }
 
     /// Parse an `ArtifactId` from a UUID string.
