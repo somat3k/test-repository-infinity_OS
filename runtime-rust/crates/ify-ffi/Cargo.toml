@@ -1,0 +1,19 @@
+[package]
+name        = "ify-ffi"
+description = "infinityOS — safe Rust wrappers over the C kernel ABI"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+authors.workspace     = true
+repository.workspace  = true
+rust-version.workspace = true
+
+[dependencies]
+ify-core  = { workspace = true }
+thiserror = { workspace = true }
+tracing   = { workspace = true }
+
+[build-dependencies]
+# cc is used to link against the C kernel library once it is built.
+# Uncomment when the kernel-c CMake build is in place.
+# cc = "1"

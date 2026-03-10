@@ -6,13 +6,13 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Define layered architecture map (kernel, runtime, canvas, data, deploy). (Owner: copilot, 2026-03-10)
 - [x] Freeze module boundaries and dependency rules. (Owner: copilot, 2026-03-10)
 - [x] Publish system context and component diagrams. (Owner: copilot, 2026-03-10)
-- [ ] Specify dimension model (what is a dimension, namespaces, tenancy, scope boundaries).
-- [ ] Define TaskID invariants (unique per dimension, stable derivation, collision strategy).
-- [ ] Define artifact model (mesh artifacts, node artifacts, provenance, immutability tiers).
-- [ ] Write event taxonomy (ActionLog verbs, payload schema, causality, correlation IDs).
-- [ ] Define runtime capability registry (features, permissions, hardware, sandbox capabilities).
-- [ ] Establish product UX surface map (multiplex agents window, project window, chat column, widgets, editors, node canvas).
-- [ ] Define end-to-end "user request → agent plan → blockControllers → nodes → execution → evaluation" reference flow.
+- [x] Specify dimension model (what is a dimension, namespaces, tenancy, scope boundaries). (Owner: copilot, 2026-03-10) → docs/architecture/dimension-model.md
+- [x] Define TaskID invariants (unique per dimension, stable derivation, collision strategy). (Owner: copilot, 2026-03-10) → docs/architecture/taskid-invariants.md
+- [x] Define artifact model (mesh artifacts, node artifacts, provenance, immutability tiers). (Owner: copilot, 2026-03-10) → docs/architecture/artifact-model.md
+- [x] Write event taxonomy (ActionLog verbs, payload schema, causality, correlation IDs). (Owner: copilot, 2026-03-10) → docs/architecture/event-taxonomy.md
+- [x] Define runtime capability registry (features, permissions, hardware, sandbox capabilities). (Owner: copilot, 2026-03-10) → docs/architecture/capability-registry.md
+- [x] Establish product UX surface map (multiplex agents window, project window, chat column, widgets, editors, node canvas). (Owner: copilot, 2026-03-10) → docs/architecture/ux-surface-map.md
+- [x] Define end-to-end "user request → agent plan → blockControllers → nodes → execution → evaluation" reference flow. (Owner: copilot, 2026-03-10) → docs/architecture/reference-flow.md
 
 ## B. blockControllerGenerator Regime
 - [ ] Specify dimensional block controller contracts (inputs/outputs, dimension scoping, invariants).

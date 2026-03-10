@@ -1,0 +1,34 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ify-core",
+    "crates/ify-executor",
+    "crates/ify-ffi",
+]
+
+[workspace.package]
+version     = "0.1.0"
+edition     = "2021"
+license     = "SEE LICENSE IN LICENSE"
+authors     = ["infinityOS contributors"]
+repository  = "https://github.com/somat3k/test-repository-infinity_OS"
+rust-version = "1.75"
+
+[workspace.dependencies]
+# Async runtime
+tokio      = { version = "1", features = ["full"] }
+# Error handling
+thiserror  = "1"
+anyhow     = "1"
+# Serialization
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Unique identifiers (UUID v7)
+uuid       = { version = "1", features = ["v4", "v5", "v7", "serde"] }
+# Structured logging
+tracing         = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+# Workspace crates
+ify-core     = { path = "crates/ify-core" }
+ify-executor = { path = "crates/ify-executor" }
+ify-ffi      = { path = "crates/ify-ffi" }
