@@ -52,6 +52,7 @@ flowchart TB
   Runtime --> Data
   Runtime --> Agents
   Runtime --> Deploy
+  Data --> Deploy
 ```
 
 ## 2) Agent Roles (Who)
