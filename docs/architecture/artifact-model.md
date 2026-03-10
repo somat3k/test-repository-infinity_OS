@@ -85,6 +85,10 @@ Provenance records are themselves immutable persistent artifacts (tier 2) and ar
 
 Artifact content is referenced by a **SHA-256 content hash**.  Two artifacts with the same content hash are byte-identical.  The storage layer may deduplicate them at the block level while retaining distinct `ArtifactId`s in the index for provenance accuracy.
 
+### 6.1 IPFS Storage Policy for Legal/Regulatory Artifacts
+
+Tier 2 persistent artifacts representing **TeraForms, contracts, licenses, certifications, legal documents, and regulatory filings** are stored through the IPFS storage adapter. The adapter derives a CIDv1 from the `content_hash` and records the CID in storage metadata for retrieval and pinning policies. IPFS storage never mutates artifact payloads; it only provides a content-addressed backing store aligned with the existing immutability tiers.
+
 ---
 
 ## 7. Artifact Lifecycle
