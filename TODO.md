@@ -15,16 +15,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Define end-to-end "user request → agent plan → blockControllers → nodes → execution → evaluation" reference flow. (Owner: copilot, 2026-03-10) → docs/architecture/reference-flow.md
 
 ## B. blockControllerGenerator Regime
-- [ ] Specify dimensional block controller contracts (inputs/outputs, dimension scoping, invariants).
-- [ ] Implement controller lifecycle: create → link → isolate → dispose (with deterministic cleanup).
-- [ ] Validate invalid dimensional mappings (type checks + runtime guards + error surfaces).
-- [ ] Implement global-per-dimension TaskID allocator (monotonic + ULID/UUIDv7) + deterministic derivation option.
-- [ ] Implement ActionLog capture for every controller action (register block → editor create → interpreter attach → orchestration → mesh updates).
-- [ ] Implement block registration pipeline: create new editor instance, attach interpreter, bind to runtime.
-- [ ] Implement orchestrator dispatch hooks (submit tasks, subscribe to progress, cancel, replay).
-- [ ] Implement mesh-artifact write path (produce/consume artifacts, node snapshots, diff patches).
-- [ ] Implement seamless node adder (from code editor + user intent) with undo/redo and validation.
-- [ ] Implement node customizer (parameters/tools/memory/task-flow wiring) with templates and presets.
+- [x] Specify dimensional block controller contracts (inputs/outputs, dimension scoping, invariants). (Owner: copilot, 2026-03-10) → docs/architecture/block-controller-contract.md
+- [x] Implement controller lifecycle: create → link → isolate → dispose (with deterministic cleanup). (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/controller.rs
+- [x] Validate invalid dimensional mappings (type checks + runtime guards + error surfaces). (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/controller.rs
+- [x] Implement global-per-dimension TaskID allocator (monotonic + ULID/UUIDv7) + deterministic derivation option. (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/task_allocator.rs
+- [x] Implement ActionLog capture for every controller action (register block → editor create → interpreter attach → orchestration → mesh updates). (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/action_log.rs
+- [x] Implement block registration pipeline: create new editor instance, attach interpreter, bind to runtime. (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/registry.rs
+- [x] Implement orchestrator dispatch hooks (submit tasks, subscribe to progress, cancel, replay). (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/orchestrator.rs
+- [x] Implement mesh-artifact write path (produce/consume artifacts, node snapshots, diff patches). (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/mesh.rs
+- [x] Implement seamless node adder (from code editor + user intent) with undo/redo and validation. (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/node.rs
+- [x] Implement node customizer (parameters/tools/memory/task-flow wiring) with templates and presets. (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/node.rs
 
 ## C. C Kernel and Boost Layer
 - [ ] Establish kernel library layout in C (modules, headers, build system, tests).
