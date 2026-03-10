@@ -47,12 +47,12 @@ flowchart LR
 ### Component Diagram
 ```mermaid
 flowchart TB
-  Kernel --> Runtime
-  Runtime --> Canvas
-  Runtime --> Data
-  Runtime --> Agents
-  Runtime --> Deploy
-  Data --> Deploy
+  Canvas --> Runtime
+  Data --> Runtime
+  Agents --> Runtime
+  Deploy --> Runtime
+  Deploy --> Data
+  Runtime --> Kernel
 ```
 
 ## 2) Agent Roles (Who)
