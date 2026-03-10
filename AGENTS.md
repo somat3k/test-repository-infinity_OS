@@ -116,6 +116,8 @@ Owns:
 - retention and legal hold policies,
 - tiered storage, deduplication, and encryption-at-rest requirements,
 - IPFS-backed storage for TeraForms, contracts, licenses, certifications, and legal/regulatory documents,
+- multimedia database interpretation with schema-driven automations,
+- DeFi resource pooling, encapsulation, and circuit-based computation distribution across connected node networks,
 - backup/restore workflows and integrity verification.
 
 Must guarantee:
@@ -124,7 +126,8 @@ Must guarantee:
 - measurable throughput/latency budgets,
 - artifact integrity checks,
 - retention enforcement and restore readiness,
-- audit-ready encryption and key management hooks.
+- audit-ready encryption and key management hooks,
+- schema automation, retention, and circular analysis execution by predefined agents.
 
 ### 2.5 Reliability Agent
 Owns:
@@ -282,9 +285,9 @@ Must guarantee:
 ### 4.10 Data / DB / Library Management Agents (10)
 1. DB connection manager.
 2. Migration planner and executor.
-3. Query node templates.
-4. ETL/ELT pipeline templates.
-5. Data quality checks.
+3. Query node templates (multimedia DB extensions + circuit-aware distribution).
+4. ETL/ELT pipeline templates with schema automation hooks.
+5. Data quality checks and circular analysis automation (predefined agents).
 6. Library/package pinning.
 7. Vulnerability/license scanning.
 8. Dataset cataloging and tagging (versioned snapshots + semantic tags).

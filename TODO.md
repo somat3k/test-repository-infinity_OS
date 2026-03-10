@@ -41,6 +41,7 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 ## D. Data Archiving and Storage
 - [-] Define archival policies (hot/warm/cold tiers) per dimension/project. (Owner: copilot, 2026-03-10) → data/README.md
 - [-] Define retention settings and legal holds (per artifact class). (Owner: copilot, 2026-03-10) → data/README.md
+- [-] Interpret databases as multimedia with schema automations, retention, and circular analysis for DeFi resource pooling and circuit-based distribution. (Owner: copilot, 2026-03-10) → data/README.md
 - [-] Implement storage adapters (local fs, object store, db-backed, IPFS for legal/regulatory artifacts) with uniform API. (Owner: copilot, 2026-03-10) → data/README.md
 - [-] Implement integrity verification (hash chains, signatures optional) and restoration checks. (Owner: copilot, 2026-03-10) → data/README.md
 - [-] Add provenance linking (artifact → producing task → agent → controller → node graph). (Owner: copilot, 2026-03-10) → data/README.md
