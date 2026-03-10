@@ -52,16 +52,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [-] Add performance benchmarks for ingest/query/restore. (Owner: copilot, 2026-03-10) → data/README.md
 
 ## E. Editor Snippet Execution
-- [ ] Implement secure snippet runtime entrypoint from canvas nodes.
-- [ ] Define snippet packaging format (code, deps, permissions, metadata).
-- [ ] Add execution profiles (local, isolated, deployment-bound) with explicit boundaries.
-- [ ] Implement permission/capability model (fs/net/model access) with prompts.
-- [ ] Add deterministic execution mode (seeded, pinned deps) for reproducibility.
-- [ ] Implement interpreter attachment API for editors (language servers + runtimes).
-- [ ] Add sandbox escape tests and hardening checks.
-- [ ] Implement output artifact capture (logs, files, structured results).
-- [ ] Add resource limits (cpu/mem/time) and preflight validation.
-- [ ] Add snippet-to-node compiler (turn editor code into reusable node templates).
+- [-] Implement secure snippet runtime entrypoint from canvas nodes. (Owner: copilot, 2026-03-10)
+- [-] Define snippet packaging format (code, deps, permissions, metadata). (Owner: copilot, 2026-03-10)
+- [-] Add execution profiles (local, isolated, deployment-bound) with explicit boundaries. (Owner: copilot, 2026-03-10)
+- [-] Implement permission/capability model (fs/net/model access) with prompts. (Owner: copilot, 2026-03-10)
+- [-] Add deterministic execution mode (seeded, pinned deps) for reproducibility. (Owner: copilot, 2026-03-10)
+- [-] Implement interpreter attachment API for editors (language servers + runtimes). (Owner: copilot, 2026-03-10)
+- [-] Add sandbox escape tests and hardening checks. (Owner: copilot, 2026-03-10)
+- [-] Implement output artifact capture (logs, files, structured results). (Owner: copilot, 2026-03-10)
+- [-] Add resource limits (cpu/mem/time) and preflight validation. (Owner: copilot, 2026-03-10)
+- [-] Add snippet-to-node compiler (turn editor code into reusable node templates). (Owner: copilot, 2026-03-10)
 
 ## F. Flow Graph and Node Connectivity
 - [ ] Implement node/link/group graph data model with typed ports.

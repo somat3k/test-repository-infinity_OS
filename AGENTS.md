@@ -306,6 +306,18 @@ Must guarantee:
 9. Deterministic test harness for connectors.
 10. Compliance and audit logging.
 
+### 4.12 Editor Snippet Execution (10)
+1. Secure snippet runtime entrypoint for canvas nodes.
+2. Snippet packaging format (code, deps, permissions, metadata).
+3. Execution profiles (local, isolated, deployment-bound) with explicit boundaries.
+4. Permission/capability model (fs/net/model access) with prompts.
+5. Deterministic execution mode (seeded, pinned deps) for reproducibility.
+6. Interpreter attachment API for editors (language servers + runtimes).
+7. Sandbox escape tests and hardening checks.
+8. Output artifact capture (logs, files, structured results).
+9. Resource limits (cpu/mem/time) and preflight validation.
+10. Snippet-to-node compiler (turn editor code into reusable node templates).
+
 ## 5) Build Timing (When)
 
 Build and verify at these checkpoints:
