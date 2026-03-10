@@ -27,16 +27,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Implement node customizer (parameters/tools/memory/task-flow wiring) with templates and presets. (Owner: copilot, 2026-03-10) → runtime-rust/crates/ify-controller/src/node.rs
 
 ## C. C Kernel and Boost Layer
-- [ ] Establish kernel library layout in C (modules, headers, build system, tests).
-- [ ] Implement scheduler baseline primitives (queues, priorities, timers, cooperative yield).
-- [ ] Implement memory baseline primitives (allocators, arenas, refcount/RCU option, bounds checking).
-- [ ] Add ABI-safe export surface for Rust performer layer (FFI types, versioning, compatibility tests).
-- [ ] Implement kernel boot sequence (init → capability discovery → subsystem start → service loop).
-- [ ] Implement kernel service registry (named services, lifecycle, health checks).
-- [ ] Implement replication kernel (task-scoped micro-kernel instances for specified workloads).
-- [ ] Define replication policies (when to replicate, resource caps, teardown, pinning).
-- [ ] Add kernel tracing hooks (span IDs, time, alloc stats) feeding telemetry.
-- [ ] Implement crash-only restart semantics for kernel services (with state recovery policy).
+- [x] Establish kernel library layout in C (modules, headers, build system, tests). (Owner: copilot, 2026-03-10) → kernel-c/CMakeLists.txt, kernel-c/src/, kernel-c/tests/
+- [x] Implement scheduler baseline primitives (queues, priorities, timers, cooperative yield). (Owner: copilot, 2026-03-10) → kernel-c/src/scheduler.c, kernel-c/include/infinity/scheduler.h
+- [x] Implement memory baseline primitives (allocators, arenas, refcount/RCU option, bounds checking). (Owner: copilot, 2026-03-10) → kernel-c/src/memory.c, kernel-c/include/infinity/memory.h
+- [x] Add ABI-safe export surface for Rust performer layer (FFI types, versioning, compatibility tests). (Owner: copilot, 2026-03-10) → kernel-c/src/ffi.c, kernel-c/include/infinity/ffi.h, kernel-c/tests/test_ffi.c
+- [x] Implement kernel boot sequence (init → capability discovery → subsystem start → service loop). (Owner: copilot, 2026-03-10) → kernel-c/src/kernel.c
+- [x] Implement kernel service registry (named services, lifecycle, health checks). (Owner: copilot, 2026-03-10) → kernel-c/src/service_registry.c, kernel-c/include/infinity/service_registry.h
+- [x] Implement replication kernel (task-scoped micro-kernel instances for specified workloads). (Owner: copilot, 2026-03-10) → kernel-c/src/replication.c, kernel-c/include/infinity/replication.h
+- [x] Define replication policies (when to replicate, resource caps, teardown, pinning). (Owner: copilot, 2026-03-10) → kernel-c/include/infinity/replication.h (ify_replica_policy_t), kernel-c/src/replication.c
+- [x] Add kernel tracing hooks (span IDs, time, alloc stats) feeding telemetry. (Owner: copilot, 2026-03-10) → kernel-c/src/trace.c, kernel-c/include/infinity/trace.h
+- [x] Implement crash-only restart semantics for kernel services (with state recovery policy). (Owner: copilot, 2026-03-10) → kernel-c/src/service_registry.c (ify_restart_policy_t + retry loop)
 
 ## D. Data Archiving and Storage
 - [ ] Define archival policies (hot/warm/cold tiers) per dimension/project.
