@@ -39,16 +39,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Implement crash-only restart semantics for kernel services (with state recovery policy). (Owner: copilot, 2026-03-10) → kernel-c/src/service_registry.c (ify_restart_policy_t + retry loop)
 
 ## D. Data Archiving and Storage
-- [ ] Define archival policies (hot/warm/cold tiers) per dimension/project.
-- [ ] Define retention settings and legal holds (per artifact class).
-- [ ] Implement storage adapters (local fs, object store, db-backed) with uniform API.
-- [ ] Implement integrity verification (hash chains, signatures optional) and restoration checks.
-- [ ] Add provenance linking (artifact → producing task → agent → controller → node graph).
-- [ ] Implement dataset versioning (semantic tags + immutable snapshots).
-- [ ] Implement backup/restore tooling (CLI + in-app) with dry-run.
-- [ ] Add deduplication strategy (content-addressed chunks) for large artifacts.
-- [ ] Add encryption-at-rest + key management hooks.
-- [ ] Add performance benchmarks for ingest/query/restore.
+- [x] Define archival policies (hot/warm/cold tiers) per dimension/project. (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Define retention settings and legal holds (per artifact class). (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Implement storage adapters (local fs, object store, db-backed) with uniform API. (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Implement integrity verification (hash chains, signatures optional) and restoration checks. (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Add provenance linking (artifact → producing task → agent → controller → node graph). (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Implement dataset versioning (semantic tags + immutable snapshots). (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Implement backup/restore tooling (CLI + in-app) with dry-run. (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Add deduplication strategy (content-addressed chunks) for large artifacts. (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Add encryption-at-rest + key management hooks. (Owner: copilot, 2026-03-10) → data/README.md
+- [x] Add performance benchmarks for ingest/query/restore. (Owner: copilot, 2026-03-10) → data/README.md
 
 ## E. Editor Snippet Execution
 - [ ] Implement secure snippet runtime entrypoint from canvas nodes.

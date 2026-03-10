@@ -5,13 +5,17 @@ The data layer owns archival policies, storage adapters, transformation pipeline
 ## Responsibilities
 
 - Hot/warm/cold archival tiers per dimension and project
+- Retention settings and legal holds per artifact class
 - Storage adapters (local fs, object store, database-backed) with uniform API
 - Dataset versioning (semantic tags + immutable snapshots)
 - Hash-chain integrity verification and restoration checks
 - Provenance linking: artifact → producing task → agent → controller → node graph
+- Backup/restore tooling (CLI + in-app) with dry-run support
+- Deduplication strategy for large artifacts (content-addressed chunks)
 - Processing and transformation primitives (map/filter/reduce/aggregate/window)
 - Dead-letter handling, streaming mode, watermarking, checkpointing
 - Encryption-at-rest hooks and key management integration
+- Performance benchmarks for ingest/query/restore operations
 
 ## Constraints
 

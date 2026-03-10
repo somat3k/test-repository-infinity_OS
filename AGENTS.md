@@ -112,13 +112,18 @@ Owns:
 - archive/store/process/transform/manage layers,
 - schema versioning and migrations,
 - lineage/provenance and replay,
-- dataset classification/transformation governance.
+- dataset classification/transformation governance,
+- retention and legal hold policies,
+- tiered storage, deduplication, and encryption-at-rest requirements,
+- backup/restore workflows and integrity verification.
 
 Must guarantee:
 - backward-compatible data migrations,
 - immutable event history where required,
 - measurable throughput/latency budgets,
-- artifact integrity checks.
+- artifact integrity checks,
+- retention enforcement and restore readiness,
+- audit-ready encryption and key management hooks.
 
 ### 2.5 Reliability Agent
 Owns:
@@ -281,9 +286,9 @@ Must guarantee:
 5. Data quality checks.
 6. Library/package pinning.
 7. Vulnerability/license scanning.
-8. Dataset cataloging and tagging.
-9. Retention and archival automation.
-10. Backup/restore workflows.
+8. Dataset cataloging and tagging (versioned snapshots + semantic tags).
+9. Retention and archival automation (tiered storage, deduplication, encryption-at-rest).
+10. Backup/restore workflows with integrity verification and ingest/query/restore benchmarks.
 
 ### 4.11 Blockchain + HTTP Nodes/Agents (10)
 1. HTTP request node with auth/retry.
