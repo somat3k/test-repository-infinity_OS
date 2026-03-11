@@ -1811,6 +1811,12 @@ mod tests {
         MeshArtifactStore::new(log, 16)
     }
 
+    fn make_store_with_log() -> (Arc<ActionLog>, Arc<MeshArtifactStore>) {
+        let log = ActionLog::new(32);
+        let store = MeshArtifactStore::new(Arc::clone(&log), 16);
+        (log, store)
+    }
+
     fn make_artifact(dim: DimensionId, task: TaskId) -> MeshArtifact {
         MeshArtifactBuilder::new(dim, task)
             .payload(serde_json::json!({ "hello": "mesh" }))
@@ -2064,5 +2070,257 @@ mod tests {
         let replicator = MeshReplicator::new(Arc::clone(&source), Arc::clone(&target));
         replicator.replicate_artifact(id).unwrap();
         assert_eq!(target.artifact_count(), 1);
+    }
+
+    #[test]
+    fn replication_rejects_duplicate_artifact_and_logs() {
+        let (log, target) = make_store_with_log();
+        let source = make_store();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let id = source.produce(make_artifact(dim, task));
+        let replicator = MeshReplicator::new(Arc::clone(&source), Arc::clone(&target));
+        replicator.replicate_artifact(id).unwrap();
+        let err = replicator.replicate_artifact(id);
+        assert!(matches!(err, Err(MeshError::AlreadyExists(_))));
+        let last = log.all_entries().last().cloned().expect("log entry");
+        assert_eq!(last.event_type, EventType::ArtifactProduced);
+        assert_eq!(
+            last.payload.get("replicated").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+    }
+
+    #[tokio::test]
+    async fn replication_snapshot_and_patch_updates_state() {
+        let source = make_store();
+        let target = make_store();
+        let mut rx = target.subscribe_notifications();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let node_id = Uuid::new_v4();
+
+        let snap_id = source.snapshot_node(node_id, serde_json::json!({"x": 1}), task, dim);
+        let before = serde_json::json!({ "count": 1 });
+        let after = serde_json::json!({ "count": 2 });
+        let ops = vec![PatchOp::Replace {
+            path: "/count".to_owned(),
+            old: serde_json::json!(1),
+            new: serde_json::json!(2),
+        }];
+        let patch_id = source.patch(node_id, before, after, ops, task, dim);
+
+        let replicator = MeshReplicator::new(Arc::clone(&source), Arc::clone(&target));
+        replicator.replicate_snapshot(snap_id).unwrap();
+        replicator.replicate_patch(patch_id).unwrap();
+
+        let note = rx.recv().await.unwrap();
+        assert_eq!(note.kind, MeshNotificationKind::Replicated);
+
+        let state = target.node_state(node_id).expect("node state");
+        assert!(state.revision >= 1);
+    }
+
+    #[test]
+    fn replication_respects_revision_order() {
+        let source = make_store();
+        let target = make_store();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let node_id = Uuid::new_v4();
+
+        let before = serde_json::json!({ "x": 0 });
+        let after = serde_json::json!({ "x": 1 });
+        let ops = vec![PatchOp::Replace {
+            path: "/x".to_owned(),
+            old: serde_json::json!(0),
+            new: serde_json::json!(1),
+        }];
+        target
+            .patch_with_revision(
+                node_id,
+                before.clone(),
+                after.clone(),
+                ops.clone(),
+                task,
+                dim,
+                0,
+                ConflictStrategy::LastWriteWins,
+            )
+            .unwrap();
+        let snap_id = source.snapshot_node(node_id, serde_json::json!({"x": 0}), task, dim);
+        let replicator = MeshReplicator::new(Arc::clone(&source), Arc::clone(&target));
+        replicator.replicate_snapshot(snap_id).unwrap();
+        let state = target.node_state(node_id).expect("node state");
+        assert_eq!(state.revision, 1);
+    }
+
+    #[test]
+    fn replication_rejects_duplicate_snapshot_and_patch() {
+        let source = make_store();
+        let target = make_store();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let node_id = Uuid::new_v4();
+
+        let snap_id = source.snapshot_node(node_id, serde_json::json!({"x": 4}), task, dim);
+        let patch_id = source.patch(
+            node_id,
+            serde_json::json!({ "x": 4 }),
+            serde_json::json!({ "x": 5 }),
+            vec![PatchOp::Replace {
+                path: "/x".to_owned(),
+                old: serde_json::json!(4),
+                new: serde_json::json!(5),
+            }],
+            task,
+            dim,
+        );
+
+        let replicator = MeshReplicator::new(Arc::clone(&source), Arc::clone(&target));
+        replicator.replicate_snapshot(snap_id).unwrap();
+        let err = replicator.replicate_snapshot(snap_id);
+        assert!(matches!(err, Err(MeshError::AlreadyExists(_))));
+
+        replicator.replicate_patch(patch_id).unwrap();
+        let err = replicator.replicate_patch(patch_id);
+        assert!(matches!(err, Err(MeshError::AlreadyExists(_))));
+    }
+
+    #[test]
+    fn replicate_notification_routes_by_kind() {
+        let source = make_store();
+        let target = make_store();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let node_id = Uuid::new_v4();
+
+        let artifact_id = source.produce(make_artifact(dim, task));
+        let snap_id = source.snapshot_node(node_id, serde_json::json!({"x": 2}), task, dim);
+        let patch_id = source.patch(
+            node_id,
+            serde_json::json!({ "x": 2 }),
+            serde_json::json!({ "x": 3 }),
+            vec![PatchOp::Replace {
+                path: "/x".to_owned(),
+                old: serde_json::json!(2),
+                new: serde_json::json!(3),
+            }],
+            task,
+            dim,
+        );
+
+        let replicator = MeshReplicator::new(Arc::clone(&source), Arc::clone(&target));
+        let count = replicator
+            .replicate_notification(&MeshNotification {
+                ids: vec![artifact_id],
+                kind: MeshNotificationKind::Produced,
+                dimension_id: dim,
+                task_id: task,
+                node_id: None,
+                tags: Vec::new(),
+                content_type: "application/json".to_owned(),
+            })
+            .unwrap();
+        assert_eq!(count, 1);
+
+        let count = replicator
+            .replicate_notification(&MeshNotification {
+                ids: vec![snap_id],
+                kind: MeshNotificationKind::Snapshot,
+                dimension_id: dim,
+                task_id: task,
+                node_id: Some(node_id),
+                tags: Vec::new(),
+                content_type: "application/json".to_owned(),
+            })
+            .unwrap();
+        assert_eq!(count, 1);
+        assert!(target.get_snapshot(snap_id).is_ok());
+
+        let count = replicator
+            .replicate_notification(&MeshNotification {
+                ids: vec![patch_id],
+                kind: MeshNotificationKind::Patch,
+                dimension_id: dim,
+                task_id: task,
+                node_id: Some(node_id),
+                tags: Vec::new(),
+                content_type: "application/json".to_owned(),
+            })
+            .unwrap();
+        assert_eq!(count, 1);
+        assert!(target.get_patch(patch_id).is_ok());
+    }
+
+    #[test]
+    fn patch_force_fallback_updates_revision() {
+        let store = make_store();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let node_id = Uuid::new_v4();
+        let before = serde_json::json!({ "x": 1 });
+        let after = serde_json::json!({ "x": 2 });
+        let ops = vec![PatchOp::Replace {
+            path: "/x".to_owned(),
+            old: serde_json::json!(1),
+            new: serde_json::json!(2),
+        }];
+
+        let result = store
+            .patch_with_revision(
+                node_id,
+                before.clone(),
+                after.clone(),
+                ops.clone(),
+                task,
+                dim,
+                0,
+                ConflictStrategy::Reject,
+            )
+            .unwrap();
+        assert_eq!(result.new_revision, 1);
+
+        let patch_id = store.force_patch(node_id, before, after, ops, task, dim);
+        let patch = store.get_patch(patch_id).unwrap();
+        assert!(patch.new_revision >= 2);
+    }
+
+    #[test]
+    fn tags_are_sorted_and_deduplicated() {
+        let store = make_store();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+
+        let unsorted = MeshArtifactBuilder::new(dim, task)
+            .tags(vec!["beta".to_owned(), "alpha".to_owned(), "beta".to_owned()])
+            .payload(serde_json::json!({"value": 1}))
+            .build();
+        let unsorted_id = store.produce(unsorted);
+        let unsorted_artifact = store.get_artifact(unsorted_id).unwrap();
+        assert_eq!(unsorted_artifact.tags, vec!["alpha", "beta"]);
+
+        let sorted = MeshArtifactBuilder::new(dim, task)
+            .tags(vec!["alpha".to_owned(), "alpha".to_owned(), "gamma".to_owned()])
+            .payload(serde_json::json!({"value": 2}))
+            .build();
+        let sorted_id = store.produce(sorted);
+        let sorted_artifact = store.get_artifact(sorted_id).unwrap();
+        assert_eq!(sorted_artifact.tags, vec!["alpha", "gamma"]);
+
+        let single = MeshArtifactBuilder::new(dim, task)
+            .tags(vec!["only".to_owned()])
+            .payload(serde_json::json!({"value": 3}))
+            .build();
+        let single_id = store.produce(single);
+        let single_artifact = store.get_artifact(single_id).unwrap();
+        assert_eq!(single_artifact.tags, vec!["only"]);
+
+        let empty = MeshArtifactBuilder::new(dim, task)
+            .payload(serde_json::json!({"value": 4}))
+            .build();
+        let empty_id = store.produce(empty);
+        let empty_artifact = store.get_artifact(empty_id).unwrap();
+        assert!(empty_artifact.tags.is_empty());
     }
 }
