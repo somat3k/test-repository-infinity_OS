@@ -1,8 +1,8 @@
 # Epic I — Infinity Zoom Canvas UX Contracts
 
-**Status:** `[ ]` planned  
+**Status:** `[-]` in progress  
 **Epic:** I — Infinity Zoom Canvas UX Contracts  
-**Owner:** Canvas team
+**Owner:** copilot
 
 ---
 
