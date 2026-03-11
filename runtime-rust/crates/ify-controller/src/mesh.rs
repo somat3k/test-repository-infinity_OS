@@ -1530,6 +1530,7 @@ impl MeshArtifactStore {
         Ok((base_revision, new_revision, conflict))
     }
 
+    #[allow(dead_code)]
     fn force_patch(
         &self,
         node_id: Uuid,

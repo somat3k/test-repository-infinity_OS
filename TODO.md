@@ -188,16 +188,16 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [ ] Add security hardening checklist before GA. (Owner: security-agent, 2026-03-11)
 
 ## P. Processing and Transformation Pipelines
-- [ ] Build pipeline primitives (map/filter/reduce/aggregate/window).
-- [ ] Add transform versioning and replay.
-- [ ] Add dead-letter handling for failed transforms.
-- [ ] Add schema inference and validation for datasets.
-- [ ] Add streaming mode + watermarking.
-- [ ] Add checkpointing and resume.
-- [ ] Add lineage tracking integrated with mesh artifacts.
-- [ ] Add performance optimization for large transforms.
-- [ ] Add UI pipeline builder nodes.
-- [ ] Add connectors to DB and object storage.
+- [x] Build pipeline primitives (map/filter/reduce/aggregate/window). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`StepKind`, `PipelineStep`, `Pipeline`)
+- [x] Add transform versioning and replay. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`TransformVersion`, `TransformReplayRequest`, `PipelineRegistry::replay_version`)
+- [x] Add dead-letter handling for failed transforms. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`DeadLetterQueue`, `DeadLetterEntry`, `DeadLetterReason`)
+- [x] Add schema inference and validation for datasets. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`SchemaInferrer`, `SchemaValidator`, `DataSchema`, `SchemaRegistry`)
+- [x] Add streaming mode + watermarking. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`StreamPipeline`, `StreamRecord`, `EventWatermark`)
+- [x] Add checkpointing and resume. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`PipelineCheckpoint`, `CheckpointStore`, `PipelineRegistry::save_checkpoint`, `PipelineRegistry::resume_from_checkpoint`)
+- [x] Add lineage tracking integrated with mesh artifacts. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`LineageRecord`, `LineageTracker`)
+- [x] Add performance optimization for large transforms. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`BatchConfig`, `PipelineMetrics`, `PipelineOptimizer`)
+- [x] Add UI pipeline builder nodes. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`PipelineNodeKind`, `PipelineBuilderNode`, `PipelineBuilderRegistry`)
+- [x] Add connectors to DB and object storage. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`StorageConnectorKind`, `StorageConnector`, `StorageConnectorRegistry`)
 
 ## Q. Quality Engineering
 - [ ] Add unit/integration/performance test strategy.

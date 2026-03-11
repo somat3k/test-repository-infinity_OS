@@ -73,6 +73,7 @@ pub mod model_runtime;
 pub mod node;
 pub mod node_instance;
 pub mod orchestrator;
+pub mod pipeline;
 pub mod registry;
 pub mod scheduler;
 pub mod task_allocator;
@@ -225,4 +226,40 @@ pub use node_instance::{
     PublishReceipt,
     PublishRequest,
     TemplateProvenance,
+};
+// Epic P — Processing and Transformation Pipelines
+pub use pipeline::{
+    BatchConfig,
+    CheckpointStore,
+    DataSchema,
+    DeadLetterEntry,
+    DeadLetterQueue,
+    DeadLetterReason,
+    EventWatermark,
+    FieldSchema,
+    FieldType,
+    LineageRecord,
+    LineageTracker,
+    OptimizationAdvice,
+    Pipeline,
+    PipelineBuilderNode,
+    PipelineBuilderRegistry,
+    PipelineCheckpoint,
+    PipelineError,
+    PipelineMetrics,
+    PipelineNodeKind,
+    PipelineOptimizer,
+    PipelineRegistry,
+    PipelineStep,
+    SchemaInferrer,
+    SchemaRegistry,
+    SchemaValidator,
+    StepKind,
+    StorageConnector,
+    StorageConnectorKind,
+    StorageConnectorRegistry,
+    StreamPipeline,
+    StreamRecord,
+    TransformReplayRequest,
+    TransformVersion,
 };
