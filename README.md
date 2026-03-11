@@ -51,6 +51,7 @@ tests/
   perf/                Performance and load tests
 docs/
   architecture/        Epic A specification documents
+  governance/          Epic G governance policies
 AGENTS.md              Agent roles, build workflow, operational rules
 TODO.md                A–Z epic roadmap with status tracking
 ```
