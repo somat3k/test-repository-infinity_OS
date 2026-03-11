@@ -793,7 +793,9 @@ impl MeshArtifactStore {
         let (tx, _) = broadcast::channel(channel_capacity.max(1));
         let (notification_tx, _) = broadcast::channel(channel_capacity.max(1));
         let mut registry = MeshSchemaRegistry::default();
-        let _ = registry.register_schema("application/json", "1.0.0", "Default JSON schema");
+        registry
+            .register_schema("application/json", "1.0.0", "Default JSON schema")
+            .expect("default mesh schema registration failed");
         Arc::new(Self {
             artifacts: Mutex::new(HashMap::new()),
             snapshots: Mutex::new(HashMap::new()),
@@ -900,10 +902,8 @@ impl MeshArtifactStore {
         {
             let mut arts = self.artifacts.lock().expect("mesh lock poisoned");
             let mut index = self.index.lock().expect("mesh index lock poisoned");
+            index.insert(&artifact);
             arts.insert(id, artifact);
-            if let Some(stored) = arts.get(&id) {
-                index.insert(stored);
-            }
         }
         if let Some(node_id) = node_id {
             self.touch_node_state(node_id, |state| {
@@ -977,10 +977,8 @@ impl MeshArtifactStore {
                 artifact.consumed = false;
                 let id = artifact.id;
                 ids.push(id);
+                index.insert(&artifact);
                 arts.insert(id, artifact);
-                if let Some(stored) = arts.get(&id) {
-                    index.insert(stored);
-                }
             }
         }
 
@@ -1603,10 +1601,8 @@ impl MeshArtifactStore {
         let tags = artifact.tags.clone();
         let content_type = artifact.content_type.clone();
         let mut index = self.index.lock().expect("mesh index lock poisoned");
+        index.insert(&artifact);
         arts.insert(id, artifact);
-        if let Some(stored) = arts.get(&id) {
-            index.insert(stored);
-        }
         if let Some(node_id) = node_id {
             self.touch_node_state(node_id, |state| {
                 state.last_artifact_id = Some(id);
