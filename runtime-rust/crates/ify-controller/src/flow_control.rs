@@ -204,6 +204,8 @@ pub struct FlowStep {
     pub fallback: Option<Uuid>,
     /// Optional maximum number of visits to this step.
     pub max_visits: Option<u32>,
+    /// Optional canvas attachment metadata (snippet, terminal, visuals).
+    pub canvas_attachment: Option<CanvasAttachment>,
 }
 
 impl FlowStep {
@@ -216,6 +218,7 @@ impl FlowStep {
             transitions: Vec::new(),
             fallback: None,
             max_visits: None,
+            canvas_attachment: None,
         }
     }
 
@@ -255,9 +258,19 @@ impl FlowStep {
         self.max_visits = Some(max_visits);
         self
     }
+
+    /// Attach canvas metadata to this step.
+    pub fn with_canvas_attachment(mut self, attachment: CanvasAttachment) -> Self {
+        self.canvas_attachment = Some(attachment);
+        self
+    }
 }
 
 /// A full flow graph definition.
+///
+/// Call [`FlowGraph::validate`] after inserting steps and before executing a
+/// flow.  If validation fails, the graph should be treated as invalid and must
+/// not be executed until the missing targets are corrected.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlowGraph {
     /// Unique flow identifier.
@@ -315,6 +328,173 @@ impl FlowGraph {
             }
         }
         Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Canvas attachments for operational snippets
+// ---------------------------------------------------------------------------
+
+/// Sandbox profile for editor snippet execution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SnippetSandboxProfile {
+    /// Profile name (e.g., "isolated", "trusted").
+    pub name: String,
+    /// Resource limits or constraints for the sandbox.
+    pub limits: serde_json::Value,
+    /// Allowed tool identifiers for the snippet runtime.
+    pub allowed_tools: Vec<String>,
+}
+
+impl SnippetSandboxProfile {
+    /// Create a new sandbox profile.
+    pub fn new(
+        name: impl Into<String>,
+        limits: serde_json::Value,
+        allowed_tools: Vec<String>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            limits,
+            allowed_tools,
+        }
+    }
+}
+
+/// Terminal session metadata attached to a snippet.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerminalSession {
+    /// Terminal session identifier.
+    pub session_id: Uuid,
+    /// Terminal kind (pty, shell, notebook, etc.).
+    pub kind: String,
+}
+
+impl TerminalSession {
+    /// Create a new terminal session descriptor.
+    pub fn new(kind: impl Into<String>) -> Self {
+        Self {
+            session_id: Uuid::new_v4(),
+            kind: kind.into(),
+        }
+    }
+}
+
+/// Snippet execution metadata for a flow step.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SnippetAttachment {
+    /// Unique snippet identifier.
+    pub snippet_id: Uuid,
+    /// Entry point to execute within the snippet.
+    pub entrypoint: String,
+    /// Sandbox profile for the snippet.
+    pub sandbox: SnippetSandboxProfile,
+    /// Terminal session attached to this snippet.
+    pub terminal: TerminalSession,
+}
+
+impl SnippetAttachment {
+    /// Create a new snippet attachment.
+    pub fn new(
+        snippet_id: Uuid,
+        entrypoint: impl Into<String>,
+        sandbox: SnippetSandboxProfile,
+        terminal: TerminalSession,
+    ) -> Self {
+        Self {
+            snippet_id,
+            entrypoint: entrypoint.into(),
+            sandbox,
+            terminal,
+        }
+    }
+}
+
+/// Visualization metadata for flow outputs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FlowVisualization {
+    /// Visualization kind (plot, graph, vibe, table, etc.).
+    pub kind: String,
+    /// Short description for UI use.
+    pub description: String,
+    /// Visualization specification payload.
+    pub spec: serde_json::Value,
+}
+
+impl FlowVisualization {
+    /// Create a new visualization descriptor.
+    pub fn new(
+        kind: impl Into<String>,
+        description: impl Into<String>,
+        spec: serde_json::Value,
+    ) -> Self {
+        Self {
+            kind: kind.into(),
+            description: description.into(),
+            spec,
+        }
+    }
+}
+
+/// Quality gate metadata for step-level checks.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualityGate {
+    /// Quality gate name.
+    pub name: String,
+    /// Metric name to evaluate.
+    pub metric: String,
+    /// Threshold value for the metric.
+    pub threshold: f64,
+    /// Comparison operator (e.g., \"at_least\").
+    pub operator: String,
+}
+
+impl QualityGate {
+    /// Create a new quality gate.
+    pub fn new(
+        name: impl Into<String>,
+        metric: impl Into<String>,
+        threshold: f64,
+        operator: impl Into<String>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            metric: metric.into(),
+            threshold,
+            operator: operator.into(),
+        }
+    }
+}
+
+/// Canvas attachment metadata for a flow step.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CanvasAttachment {
+    /// Snippet execution metadata, if applicable.
+    pub snippet: Option<SnippetAttachment>,
+    /// Visualizations emitted by the step.
+    pub visualizations: Vec<FlowVisualization>,
+    /// Quality gates to evaluate for this step.
+    pub quality_gates: Vec<QualityGate>,
+}
+
+impl CanvasAttachment {
+    /// Create a new canvas attachment with a snippet.
+    pub fn with_snippet(snippet: SnippetAttachment) -> Self {
+        Self {
+            snippet: Some(snippet),
+            visualizations: Vec::new(),
+            quality_gates: Vec::new(),
+        }
+    }
+
+    /// Append a visualization descriptor.
+    pub fn add_visualization(&mut self, visualization: FlowVisualization) {
+        self.visualizations.push(visualization);
+    }
+
+    /// Append a quality gate.
+    pub fn add_quality_gate(&mut self, gate: QualityGate) {
+        self.quality_gates.push(gate);
     }
 }
 
@@ -516,6 +696,10 @@ pub struct ChatPayload {
 }
 
 /// Adapter that translates natural language into structured payloads.
+///
+/// Implementations are expected to be safe for concurrent use.  Prefer
+/// stateless adapters, or ensure internal state is protected so the adapter can
+/// be shared across threads (e.g., behind an `Arc`).
 pub trait ChatAdapter {
     /// Transform a request into an intent and parameter payload.
     fn adapt(
@@ -648,6 +832,10 @@ where
 // ---------------------------------------------------------------------------
 
 /// Evaluates ML model scores used in flow control decisions.
+///
+/// Scores are expected to be normalized (0.0–1.0).  Implementations should be
+/// safe for concurrent use and may internally cache model state or embeddings
+/// as long as scoring remains deterministic for the same input features.
 pub trait ModelEvaluator {
     /// Return a model score for the supplied feature payload.
     fn score(&self, model: &str, features: &serde_json::Value) -> Result<f64, FlowControlError>;
@@ -1114,5 +1302,31 @@ mod tests {
         assert_eq!(events.len(), 2);
         assert_eq!(events[0].event_type, EventType::ChatRequestReceived);
         assert_eq!(events[1].event_type, EventType::ChatPayloadGenerated);
+    }
+
+    #[test]
+    fn flow_step_supports_canvas_snippet_attachment() {
+        let sandbox = SnippetSandboxProfile::new(
+            "isolated",
+            serde_json::json!({ "cpu": 2, "memory_mb": 512 }),
+            vec!["mesh.read".to_owned(), "plots.render".to_owned()],
+        );
+        let terminal = TerminalSession::new("pty");
+        let snippet = SnippetAttachment::new(Uuid::new_v4(), "main", sandbox, terminal);
+
+        let mut attachment = CanvasAttachment::with_snippet(snippet);
+        attachment.add_visualization(FlowVisualization::new(
+            "plot",
+            "Execution latency",
+            serde_json::json!({ "type": "line" }),
+        ));
+        attachment.add_quality_gate(QualityGate::new("latency", "latency_ms", 250.0, "at_most"));
+
+        let step = FlowStep::task("snippet", Uuid::new_v4()).with_canvas_attachment(attachment);
+
+        let canvas = step.canvas_attachment.expect("canvas attachment");
+        assert!(canvas.snippet.is_some());
+        assert_eq!(canvas.visualizations.len(), 1);
+        assert_eq!(canvas.quality_gates.len(), 1);
     }
 }
