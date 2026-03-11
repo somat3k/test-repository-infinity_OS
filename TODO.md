@@ -128,16 +128,16 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add unique TaskID enforcement + index across dimensions. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
 
 ## K. Kaizen Reliability Loop
-- [ ] Define weekly reliability review cadence.
-- [ ] Track MTTR/error budget/regression rate metrics.
-- [ ] Apply one measurable reliability improvement per cycle.
-- [ ] Implement SLOs for task execution and UI responsiveness.
-- [ ] Add chaos testing for replication kernel and orchestrator.
-- [ ] Add runbooks for common failures.
-- [ ] Add automated incident creation from telemetry signals.
-- [ ] Add regression triage workflow (labels, owners, SLA).
-- [ ] Add postmortem template + publishing workflow.
-- [ ] Add reliability dashboard integrated in widgets.
+- [x] Define weekly reliability review cadence. (Owner: copilot, 2026-03-11) → docs/reliability/review-cadence.md
+- [x] Track MTTR/error budget/regression rate metrics. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-reliability/src/metrics.rs
+- [x] Apply one measurable reliability improvement per cycle. (Owner: copilot, 2026-03-11) → docs/reliability/review-cadence.md (cycle improvement process)
+- [x] Implement SLOs for task execution and UI responsiveness. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-reliability/src/slo.rs
+- [x] Add chaos testing for replication kernel and orchestrator. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-reliability/src/chaos.rs
+- [x] Add runbooks for common failures. (Owner: copilot, 2026-03-11) → docs/reliability/runbooks/
+- [x] Add automated incident creation from telemetry signals. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-reliability/src/incident.rs
+- [x] Add regression triage workflow (labels, owners, SLA). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-reliability/src/regression.rs
+- [x] Add postmortem template + publishing workflow. (Owner: copilot, 2026-03-11) → docs/reliability/postmortem-template.md
+- [x] Add reliability dashboard integrated in widgets. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-reliability/src/dashboard.rs
 
 ## L. Layered Module Interfaces
 - [ ] Publish IDL/spec for cross-layer APIs.

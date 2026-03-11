@@ -1,0 +1,18 @@
+[package]
+name        = "ify-reliability"
+description = "infinityOS — Kaizen Reliability Loop: SLOs, metrics, chaos testing, incident management, regression triage, and reliability dashboard"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+authors.workspace     = true
+repository.workspace  = true
+rust-version.workspace = true
+
+[dependencies]
+ify-core       = { workspace = true }
+ify-controller = { workspace = true }
+thiserror  = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+uuid       = { workspace = true }
+tracing    = { workspace = true }

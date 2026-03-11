@@ -155,6 +155,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ify-reliability"
+version = "0.1.0"
+dependencies = [
+ "ify-controller",
+ "ify-core",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
