@@ -103,7 +103,7 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Add regression guardrails (perf CI thresholds). (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md, agents/performance-optimization-agent.md
 
 ## I. Infinity Zoom Canvas UX Contracts
-- [ ] Define zoom-level interaction contracts and limits.
+- [-] Define zoom-level interaction contracts and limits. (Owner: copilot, 2026-03-11)
 - [ ] Implement node visibility + detail scaling policy.
 - [ ] Add accessibility and navigation keyboard support.
 - [ ] Implement multi-select, lasso, snap-to-grid, align/distribute.
