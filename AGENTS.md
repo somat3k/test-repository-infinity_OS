@@ -165,7 +165,7 @@ Owns:
 Must guarantee:
 - security decisions are recorded in ActionLog with TaskID + correlation IDs,
 - least-privilege capability templates and approval workflows for privileged actions,
-- pre-release security hardening reviews aligned with docs/governance/ policies.
+- pre-release security hardening reviews aligned with policies in docs/governance/.
 
 ## 3) Core Concepts (What)
 

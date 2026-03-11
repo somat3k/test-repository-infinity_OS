@@ -22,6 +22,7 @@ The agents layer owns built-in agent template definitions, execution policies, m
 ## Built-in Templates
 
 - [Performance Optimization Agent](performance-optimization-agent.md)
+- [Reliability Agent](reliability-agent.md)
 - [Security Agent](security-agent.md)
 
 ## Epic Tracking

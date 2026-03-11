@@ -173,7 +173,7 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add locking policy (read-only templates vs editable). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
 - [x] Add marketplace publishing hooks. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
 - [x] Add test coverage for template expansion determinism. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
-- [x] Add UI for managing templates in project window. (Owner: copilot, 2026-03-11) → AGENTS.md (Project Window template manager)
+- [x] Document UI for managing templates in project window. (Owner: copilot, 2026-03-11) → AGENTS.md (Project Window template manager)
 
 ## O. Operational Security
 - [ ] Threat-model desktop-to-canvas execution path. (Owner: security-agent, 2026-03-11)

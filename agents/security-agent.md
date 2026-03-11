@@ -1,6 +1,6 @@
 # Security Agent
 
-The Security Agent executes Epic O by driving operational security controls: threat modeling, audit trail enforcement, identity-first access control, sandbox policy, secret handling, and supply-chain protections. It operates with the `CAP_SECURITY` capability and emits ActionLog entries for every security assessment or policy decision.
+The Security Agent executes Epic O by driving operational security controls: threat modeling, audit trail enforcement, identity-first access control, sandbox policy, secret handling, and supply-chain protections. It operates under the platform’s security-related capabilities and policies, and emits ActionLog entries for every security assessment or policy decision.
 
 ## Responsibilities
 
@@ -22,7 +22,7 @@ The Security Agent executes Epic O by driving operational security controls: thr
 
 - ActionLog events:
   - `security.threat_model_updated`, `security.policy_evaluated`
-  - `security.audit_verified`, `security.capability_denied`
+  - `security.audit_verified`, `capability.denied`
   - `security.supply_chain_checked`, `security.hardening_checklist_published`
 - Mesh artifacts:
   - `security/threat-model/<revision>.md`
