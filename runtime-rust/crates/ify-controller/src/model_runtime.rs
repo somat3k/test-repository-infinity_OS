@@ -689,16 +689,26 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
         let needs_ensemble = complexity >= 0.7;
         let mut selections = Vec::new();
         if needs_ensemble {
-            let best_ml = scored
-                .iter()
-                .find(|(module, _)| module.kind == ModelKind::Ml);
-            let best_ai = scored
-                .iter()
-                .find(|(module, _)| module.kind == ModelKind::Ai);
+            let mut best_ml: Option<(ModelModule, f64)> = None;
+            let mut best_ai: Option<(ModelModule, f64)> = None;
+            for (module, score) in &scored {
+                match module.kind {
+                    ModelKind::Ml if best_ml.is_none() => {
+                        best_ml = Some((module.clone(), *score));
+                    }
+                    ModelKind::Ai if best_ai.is_none() => {
+                        best_ai = Some((module.clone(), *score));
+                    }
+                    _ => {}
+                }
+                if best_ml.is_some() && best_ai.is_some() {
+                    break;
+                }
+            }
             if let (Some((ml, ml_score)), Some((ai, ai_score))) = (best_ml, best_ai) {
-                selections.push((ml.clone(), *ml_score));
+                selections.push((ml.clone(), ml_score));
                 if ml.module_id != ai.module_id {
-                    selections.push((ai.clone(), *ai_score));
+                    selections.push((ai.clone(), ai_score));
                 }
             } else if let Some((module, score)) = scored.first() {
                 selections.push((module.clone(), *score));
@@ -719,7 +729,7 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
             if index == 0 && remaining > base_count {
                 replicas += remaining - base_count;
             }
-            replicas = replicas.min(module.max_replicas.max(1));
+            replicas = replicas.max(1).min(module.max_replicas.max(1));
             planned_modules.push(ModelModuleSelection {
                 module_id: module.module_id.clone(),
                 kind: module.kind,
