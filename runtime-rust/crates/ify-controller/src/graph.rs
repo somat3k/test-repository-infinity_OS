@@ -88,6 +88,10 @@ pub enum FlowGraphError {
     #[error("subgraph {0} not found in graph")]
     SubgraphNotFound(Uuid),
 
+    /// A referenced node relation was not found.
+    #[error("relation {0} not found in graph")]
+    RelationNotFound(Uuid),
+
     /// The graph contains a cycle; the payload lists the cycle node IDs.
     #[error("graph contains a cycle through nodes: {0:?}")]
     CycleDetected(Vec<Uuid>),
@@ -315,6 +319,78 @@ impl Group {
             id: Uuid::now_v7(),
             name: name.into(),
             node_ids: BTreeSet::new(),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Node relations
+// ---------------------------------------------------------------------------
+
+/// The semantic kind of a named relationship between two nodes.
+///
+/// Relations are distinct from data-flow [`Link`]s — they model higher-level
+/// intent (e.g. "this node *depends on* that node") without implying direct
+/// port wiring.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationKind {
+    /// The `from_node` cannot run until `to_node` has completed successfully.
+    DependsOn,
+    /// Completion of `from_node` triggers execution of `to_node`.
+    Triggers,
+    /// `to_node` monitors / samples outputs from `from_node`.
+    ObservedBy,
+    /// `from_node` is the canonical data source consumed by `to_node`.
+    ProvidesDataTo,
+    /// Application-defined relationship with a free-form label.
+    Custom(String),
+}
+
+impl RelationKind {
+    /// Return a stable, human-readable string for the relation kind.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::DependsOn => "depends_on",
+            Self::Triggers => "triggers",
+            Self::ObservedBy => "observed_by",
+            Self::ProvidesDataTo => "provides_data_to",
+            Self::Custom(s) => s.as_str(),
+        }
+    }
+}
+
+/// A named, typed semantic relationship between two nodes.
+///
+/// Relations complement port-based [`Link`]s by expressing *intent*
+/// independently of data flow.  They are stored in [`FlowGraphSchema::relations`]
+/// and emitted to the [`ActionLog`] on creation and removal.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NodeRelation {
+    /// Unique relation identifier.
+    pub id: Uuid,
+    /// Source node of the relationship.
+    pub from_node: Uuid,
+    /// Target node of the relationship.
+    pub to_node: Uuid,
+    /// Semantic kind of the relationship.
+    pub kind: RelationKind,
+    /// Optional human-readable label.
+    pub label: Option<String>,
+    /// Arbitrary metadata attached to the relation.
+    pub metadata: BTreeMap<String, serde_json::Value>,
+}
+
+impl NodeRelation {
+    /// Construct a new relation between two nodes.
+    pub fn new(from_node: Uuid, to_node: Uuid, kind: RelationKind) -> Self {
+        Self {
+            id: Uuid::now_v7(),
+            from_node,
+            to_node,
+            kind,
+            label: None,
+            metadata: BTreeMap::new(),
         }
     }
 }
@@ -766,6 +842,11 @@ pub struct FlowGraphSchema {
     pub groups: BTreeMap<Uuid, Group>,
     /// Subgraphs / macros keyed by subgraph ID.
     pub subgraphs: BTreeMap<Uuid, Subgraph>,
+    /// Semantic node relations keyed by relation ID.
+    ///
+    /// Deserialises to an empty map when absent (backwards-compatible).
+    #[serde(default)]
+    pub relations: BTreeMap<Uuid, NodeRelation>,
 }
 
 impl FlowGraphSchema {
@@ -779,6 +860,7 @@ impl FlowGraphSchema {
             links: BTreeMap::new(),
             groups: BTreeMap::new(),
             subgraphs: BTreeMap::new(),
+            relations: BTreeMap::new(),
         }
     }
 
@@ -1195,7 +1277,85 @@ impl FlowGraph {
             .ok_or(FlowGraphError::SubgraphNotFound(id))
     }
 
-    // ── Execution state ──────────────────────────────────────────────────
+    // ── Node relations ───────────────────────────────────────────────────
+
+    /// Add a semantic [`NodeRelation`] between two nodes.
+    ///
+    /// Both endpoint nodes must already exist in the graph.
+    ///
+    /// Emits a [`EventType::NodeRelationCreated`] ActionLog event.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FlowGraphError::NodeNotFound`] if either node is absent.
+    pub fn add_relation(&mut self, relation: NodeRelation) -> Result<Uuid, FlowGraphError> {
+        if !self.schema.nodes.contains_key(&relation.from_node) {
+            return Err(FlowGraphError::NodeNotFound(relation.from_node));
+        }
+        if !self.schema.nodes.contains_key(&relation.to_node) {
+            return Err(FlowGraphError::NodeNotFound(relation.to_node));
+        }
+        let id = relation.id;
+        self.schema.relations.insert(id, relation);
+        self.action_log.append(ActionLogEntry::new(
+            EventType::NodeRelationCreated,
+            Actor::System,
+            Some(self.dimension_id),
+            Some(self.task_id),
+            serde_json::json!({ "relation_id": id }),
+        ));
+        Ok(id)
+    }
+
+    /// Remove a relation by ID.
+    ///
+    /// Emits a [`EventType::NodeRelationRemoved`] ActionLog event.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FlowGraphError::RelationNotFound`] if absent.
+    pub fn remove_relation(&mut self, id: Uuid) -> Result<NodeRelation, FlowGraphError> {
+        let rel = self
+            .schema
+            .relations
+            .remove(&id)
+            .ok_or(FlowGraphError::RelationNotFound(id))?;
+        self.action_log.append(ActionLogEntry::new(
+            EventType::NodeRelationRemoved,
+            Actor::System,
+            Some(self.dimension_id),
+            Some(self.task_id),
+            serde_json::json!({ "relation_id": id }),
+        ));
+        Ok(rel)
+    }
+
+    /// Return all relations that involve `node_id` as either endpoint.
+    pub fn relations_for_node(&self, node_id: Uuid) -> Vec<&NodeRelation> {
+        self.schema
+            .relations
+            .values()
+            .filter(|r| r.from_node == node_id || r.to_node == node_id)
+            .collect()
+    }
+
+    /// Return all outgoing relations from `node_id` (where `from_node == node_id`).
+    pub fn outgoing_relations(&self, node_id: Uuid) -> Vec<&NodeRelation> {
+        self.schema
+            .relations
+            .values()
+            .filter(|r| r.from_node == node_id)
+            .collect()
+    }
+
+    /// Return all incoming relations to `node_id` (where `to_node == node_id`).
+    pub fn incoming_relations(&self, node_id: Uuid) -> Vec<&NodeRelation> {
+        self.schema
+            .relations
+            .values()
+            .filter(|r| r.to_node == node_id)
+            .collect()
+    }
 
     /// Return the execution state for a node.
     pub fn execution_state(&self, node_id: Uuid) -> Option<&NodeExecutionState> {
@@ -2167,6 +2327,7 @@ mod tests {
                 links: BTreeMap::new(),
                 groups: BTreeMap::new(),
                 subgraphs: BTreeMap::new(),
+                relations: BTreeMap::new(),
             };
             let mut node = GraphNode::new("A", "A");
             node.id = Uuid::parse_str("10000000-0000-0000-0000-000000000001").unwrap();
@@ -2263,6 +2424,7 @@ mod tests {
             links: from.links.clone(),
             groups: from.groups.clone(),
             subgraphs: from.subgraphs.clone(),
+            relations: from.relations.clone(),
         };
         let new_node = GraphNode::new("added", "Added");
         let new_id = new_node.id;

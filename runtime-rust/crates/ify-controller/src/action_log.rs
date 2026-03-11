@@ -156,6 +156,18 @@ pub enum EventType {
     NodeExecutionFailed,
     /// A node execution contract was Cancelled.
     NodeExecutionCancelled,
+
+    // --- Node relation events (Epic F / node communication) ---
+    /// A semantic relation was created between two nodes.
+    NodeRelationCreated,
+    /// A semantic relation between two nodes was removed.
+    NodeRelationRemoved,
+
+    // --- Node communication / messaging events ---
+    /// A message was sent from one node to another.
+    NodeMessageSent,
+    /// A message was broadcast from a node to all listeners.
+    NodeMessageBroadcast,
 }
 
 impl EventType {
@@ -208,6 +220,10 @@ impl EventType {
             Self::NodeExecutionCompleted => "node_execution.completed",
             Self::NodeExecutionFailed => "node_execution.failed",
             Self::NodeExecutionCancelled => "node_execution.cancelled",
+            Self::NodeRelationCreated => "node_relation.created",
+            Self::NodeRelationRemoved => "node_relation.removed",
+            Self::NodeMessageSent => "node_message.sent",
+            Self::NodeMessageBroadcast => "node_message.broadcast",
         }
     }
 }

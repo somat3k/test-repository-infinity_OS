@@ -66,6 +66,7 @@ pub mod connectors;
 pub mod controller;
 pub mod flow_control;
 pub mod graph;
+pub mod graph_query;
 pub mod mesh;
 pub mod model_runtime;
 pub mod node;
@@ -161,10 +162,20 @@ pub use graph::{
     NodeExecutionContract,
     NodeExecutionState,
     NodeProvenance,
+    NodeRelation,
     PortDataType,
     PortDef,
     PortDirection,
+    RelationKind,
     Subgraph,
     ValidationIssue,
     ValidationReport,
+};
+// Epic F — Node Communication and Data Sampling
+pub use graph_query::{
+    NodeCommunicator,
+    NodeCondition,
+    NodeMessage,
+    NodeSample,
+    NodeSelector,
 };
