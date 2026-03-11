@@ -58,18 +58,20 @@ All threats are encoded in `ThreatModel::desktop_to_canvas()`.
 ### 4.1 Identity Verification (T-01)
 - `ify-security::identity`: `Principal`, `IdentityRegistry`, `AccessPolicy`.
 - Every resource access checked against `ResourceKind::required_capability()`.
-- ActionLog emits `SecurityAccessDenied` on failure.
+- Access denials are logged via `tracing::warn!`.
 
 ### 4.2 Artifact Signing (T-02)
 - `ify-security::artifact_signing`: `ArtifactSigner`, `ArtifactVerifier`, `SignedArtifact`.
 - All mesh and deploy artifacts signed before publication.
 - Consumers call `ArtifactVerifier::verify` before processing.
-- ActionLog emits `SecurityArtifactVerified` / `SecurityArtifactVerificationFailed`.
+- Payload is serialised using canonical JSON (sorted keys at every nesting level) so that semantically identical values always produce the same signature regardless of map-key insertion order.
+- ActionLog integration at call sites is deferred; see `docs/governance/security-hardening-checklist.md` GA gate §4.
 
 ### 4.3 Privileged Action Audit (T-03)
 - `ify-security::audit`: `PrivilegedAuditLog`, `AuditRecord`.
-- Hash-chained records stored with causality and correlation IDs.
-- `PrivilegedAuditLog::verify_chain()` detects tampering.
+- `record()` validates that `caps` contains `kind.required_capability()`; returns `AuditError::MissingCapabilityContext` otherwise.
+- `record()` accepts an `Actor` value; the actor kind is preserved in the stored record.
+- Hash-chained records stored with causality and correlation IDs; `verify_chain()` recomputes each record's hash from its fields to detect tampering and verifies chain linkage separately.
 - Minimum 12-month retention per `docs/governance/audit-policy.md`.
 
 ### 4.4 Secret Redaction (T-04)
@@ -80,26 +82,29 @@ All threats are encoded in `ThreatModel::desktop_to_canvas()`.
 ### 4.5 Sandbox Enforcement (T-05)
 - `ify-security::sandbox`: `SandboxPolicy`, `SandboxProfile`, `SandboxEnforcer`.
 - Each tool declares allowed paths, hosts, and model IDs.
+- Path checks use `std::path::Path::starts_with` (component-boundary semantics), preventing bypass via prefix extension (e.g. `/tmp/workdir2` does NOT match prefix `/tmp/workdir`).
+- `PathAccess::Write` accesses additionally require `allow_fs_write` in the profile; returns `SandboxError::WriteNotAllowed` otherwise.
 - `SandboxEnforcer::check` called before every tool invocation.
-- ActionLog emits `SecuritySandboxViolation` on denial.
+- When ActionLog is attached via `SandboxEnforcer::with_action_log`, `SecuritySandboxViolation` is emitted on every denial.
 
 ### 4.6 Input Validation (T-06)
 - `ify-security::validator`: `InputValidator`, `BoundaryLayer`.
 - Rules registered per layer (canvas→runtime, runtime→kernel, mesh write, tool invocation, agent input, API ingress).
 - Validation runs before data crosses any layer boundary.
-- ActionLog emits `SecurityValidationFailed` on rejection.
+- When ActionLog is attached via `InputValidator::with_action_log`, `SecurityValidationFailed` is emitted on every failure.
 
 ### 4.7 Supply Chain (T-07)
 - `ify-security::supply_chain`: `Sbom`, `ComponentRecord`, `SupplyChainVerifier`.
 - SBOM generated at build time; published alongside release artifacts.
 - `SupplyChainVerifier::verify_sbom` run before installation.
+- ActionLog integration at call sites is deferred; see `docs/governance/security-hardening-checklist.md` GA gate §7.
 - Residual risk remains **Medium** until asymmetric signing (Ed25519) replaces FNV mixing.
 
 ### 4.8 Policy Engine (T-08)
 - `ify-security::policy`: `PolicyEngine`, `PolicyRule`, `Decision`.
 - Default-deny posture: no rule → Deny.
 - Rate-limit and quota rules registered per dimension.
-- ActionLog emits `SecurityAccessDenied` for denied requests.
+- When ActionLog is attached via `PolicyEngine::with_action_log`, `SecurityAccessDenied` is emitted for every deny outcome (explicit deny rule or default-deny).
 
 ---
 

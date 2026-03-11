@@ -35,7 +35,6 @@
 //!     secrets::{SecretStore, Redactor},
 //!     policy::{PolicyEngine, PolicyRule, PolicyCondition, PolicyRequest, ActionType, Decision},
 //! };
-//! use ify_controller::action_log::ActionLog;
 //! use ify_core::Capabilities;
 //!
 //! // 1 — Threat model
@@ -56,11 +55,11 @@
 //! let agent = Principal::new("agent-1", PrincipalKind::Agent, Capabilities::DEPLOY, None);
 //! assert!(policy.check(&agent, ResourceKind::Deployment).is_ok());
 //!
-//! // 4 — Sandbox
+//! // 4 — Sandbox (read_path / write_path helpers use PathAccess under the hood)
 //! let mut sb_policy = SandboxPolicy::new();
 //! sb_policy.register(SandboxProfile::deny_all("my-tool").with_path("/tmp/my-tool"));
 //! let enforcer = SandboxEnforcer::new(&sb_policy);
-//! assert!(enforcer.check("my-tool", &SandboxResource::Path("/tmp/my-tool/data".into())).is_ok());
+//! assert!(enforcer.check("my-tool", &SandboxResource::read_path("/tmp/my-tool/data")).is_ok());
 //!
 //! // 5 — Secrets + redaction
 //! let mut store = SecretStore::new();
@@ -113,7 +112,7 @@ pub use policy::{
 
 // sandbox
 pub use sandbox::{
-    SandboxEnforcer, SandboxError, SandboxPolicy, SandboxProfile, SandboxResource,
+    PathAccess, SandboxEnforcer, SandboxError, SandboxPolicy, SandboxProfile, SandboxResource,
 };
 
 // secrets

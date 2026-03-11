@@ -10,7 +10,9 @@
 //! reason.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use ify_controller::action_log::{ActionLog, ActionLogEntry, Actor, EventType};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::warn;
@@ -254,16 +256,28 @@ impl ValidationRule for SafeIdentifierRule {
 /// Validates incoming data at a specific boundary layer.
 ///
 /// Rules are stored per-layer and evaluated in registration order.
-/// The validator is cheaply cloneable because rules are stored in a shared
-/// `Arc`; however, adding a rule after cloning only affects the recipient.
+/// The first failing rule short-circuits evaluation and returns a
+/// [`ValidationError`].
+///
+/// When an [`ActionLog`] is attached via [`InputValidator::with_action_log`],
+/// validation failures are also emitted as [`EventType::SecurityValidationFailed`]
+/// ActionLog entries in addition to the `tracing::warn!` log.
 pub struct InputValidator {
     rules: HashMap<BoundaryLayer, Vec<Box<dyn ValidationRule>>>,
+    action_log: Option<Arc<ActionLog>>,
 }
 
 impl InputValidator {
-    /// Create a validator with no rules.
+    /// Create a validator with no rules and no ActionLog attached.
     pub fn new() -> Self {
-        Self { rules: HashMap::new() }
+        Self { rules: HashMap::new(), action_log: None }
+    }
+
+    /// Attach an [`ActionLog`] so that validation failures emit
+    /// [`EventType::SecurityValidationFailed`] entries.
+    pub fn with_action_log(mut self, log: Arc<ActionLog>) -> Self {
+        self.action_log = Some(log);
+        self
     }
 
     /// Register a rule for a specific boundary layer.
@@ -274,7 +288,9 @@ impl InputValidator {
     /// Validate `value` against all rules registered for `layer`.
     ///
     /// Returns the first [`ValidationError`] encountered, or `Ok(())` when
-    /// all rules pass.
+    /// all rules pass.  If an [`ActionLog`] is attached, a
+    /// [`EventType::SecurityValidationFailed`] entry is emitted on the first
+    /// failure.
     pub fn validate(
         &self,
         layer: BoundaryLayer,
@@ -284,6 +300,7 @@ impl InputValidator {
             for rule in rules {
                 if let Err(e) = rule.check(value) {
                     warn!(layer = ?layer, rule = rule.name(), error = %e, "input validation failed");
+                    self.emit_validation_failed(layer, rule.name(), &e.to_string());
                     return Err(e);
                 }
             }
@@ -292,6 +309,10 @@ impl InputValidator {
     }
 
     /// Validate `value` and collect *all* failures into a [`ValidationResult`].
+    ///
+    /// If an [`ActionLog`] is attached, a single
+    /// [`EventType::SecurityValidationFailed`] entry is emitted when one or
+    /// more rules fail.
     pub fn validate_all(
         &self,
         layer: BoundaryLayer,
@@ -306,7 +327,28 @@ impl InputValidator {
                 }
             }
         }
+        if !result.ok {
+            self.emit_validation_failed(layer, "validate_all", &result.failures.join("; "));
+        }
         result
+    }
+
+    /// Emit a `SecurityValidationFailed` ActionLog entry, if an ActionLog is configured.
+    fn emit_validation_failed(&self, layer: BoundaryLayer, rule: &str, reason: &str) {
+        if let Some(log) = &self.action_log {
+            let entry = ActionLogEntry::new(
+                EventType::SecurityValidationFailed,
+                Actor::System,
+                None,
+                None,
+                serde_json::json!({
+                    "layer": format!("{layer:?}"),
+                    "rule": rule,
+                    "reason": reason,
+                }),
+            );
+            log.append(entry);
+        }
     }
 }
 
@@ -401,5 +443,23 @@ mod tests {
         let v = InputValidator::new();
         let input = serde_json::json!({"anything": true});
         assert!(v.validate(BoundaryLayer::ApiIngress, &input).is_ok());
+    }
+
+    #[test]
+    fn validation_failure_emits_action_log_event() {
+        use ify_controller::action_log::{ActionLog, EventType};
+        let log = ActionLog::new(16);
+        let mut rx = log.subscribe();
+        let mut v = InputValidator::new().with_action_log(log);
+        v.add_rule(
+            BoundaryLayer::ApiIngress,
+            Box::new(RequiredFieldsRule::new("must-have-id", ["id"])),
+        );
+        let input = serde_json::json!({});
+        let _ = v.validate(BoundaryLayer::ApiIngress, &input);
+
+        // The ActionLog broadcast should have received a SecurityValidationFailed entry.
+        let entry = rx.try_recv().expect("ActionLog entry must have been emitted");
+        assert_eq!(entry.event_type, EventType::SecurityValidationFailed);
     }
 }

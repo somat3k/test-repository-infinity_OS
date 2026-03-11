@@ -10,7 +10,10 @@
 //! [`SandboxError`] is returned and the invocation must be aborted.
 
 use std::collections::HashMap;
+use std::path::Path;
+use std::sync::Arc;
 
+use ify_controller::action_log::{ActionLog, ActionLogEntry, Actor, EventType};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::warn;
@@ -26,6 +29,14 @@ pub enum SandboxError {
     #[error("sandbox: path '{path}' not in allowed prefix list for tool '{tool}'")]
     PathNotAllowed {
         /// Tool that attempted the access.
+        tool: String,
+        /// The denied path.
+        path: String,
+    },
+    /// The tool is not permitted to write to the filesystem.
+    #[error("sandbox: filesystem write access denied for tool '{tool}' on path '{path}'")]
+    WriteNotAllowed {
+        /// Tool that attempted the write.
         tool: String,
         /// The denied path.
         path: String,
@@ -49,6 +60,20 @@ pub enum SandboxError {
     /// No sandbox profile is registered for the tool.
     #[error("sandbox: no profile registered for tool '{0}'")]
     NoProfile(String),
+}
+
+// ---------------------------------------------------------------------------
+// PathAccess
+// ---------------------------------------------------------------------------
+
+/// Specifies whether a filesystem path access is a read or a write.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PathAccess {
+    /// Read-only access.
+    Read,
+    /// Write access (requires `allow_fs_write` in the [`SandboxProfile`]).
+    Write,
 }
 
 // ---------------------------------------------------------------------------
@@ -117,14 +142,31 @@ impl SandboxProfile {
 
 /// The resource a tool is attempting to access.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case", tag = "kind", content = "value")]
+#[serde(rename_all = "snake_case", tag = "kind")]
 pub enum SandboxResource {
-    /// A filesystem path.
-    Path(String),
+    /// A filesystem path access with the requested operation type.
+    Path {
+        /// The filesystem path being accessed.
+        path: String,
+        /// Whether this is a read or write operation.
+        access: PathAccess,
+    },
     /// A network host (hostname or IP).
     Host(String),
     /// An ML model identifier.
     Model(String),
+}
+
+impl SandboxResource {
+    /// Convenience constructor for a read access.
+    pub fn read_path(path: impl Into<String>) -> Self {
+        Self::Path { path: path.into(), access: PathAccess::Read }
+    }
+
+    /// Convenience constructor for a write access.
+    pub fn write_path(path: impl Into<String>) -> Self {
+        Self::Path { path: path.into(), access: PathAccess::Write }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -159,17 +201,36 @@ impl SandboxPolicy {
 // ---------------------------------------------------------------------------
 
 /// Checks tool resource requests against the registered [`SandboxPolicy`].
+///
+/// When an [`ActionLog`] is attached via [`SandboxEnforcer::with_action_log`],
+/// every denied request emits a [`EventType::SecuritySandboxViolation`] entry
+/// in addition to the `tracing::warn!` log.
 pub struct SandboxEnforcer<'a> {
     policy: &'a SandboxPolicy,
+    action_log: Option<Arc<ActionLog>>,
 }
 
 impl<'a> SandboxEnforcer<'a> {
-    /// Create an enforcer backed by `policy`.
+    /// Create an enforcer backed by `policy` with no ActionLog.
     pub fn new(policy: &'a SandboxPolicy) -> Self {
-        Self { policy }
+        Self { policy, action_log: None }
+    }
+
+    /// Attach an [`ActionLog`] so that violations emit
+    /// [`EventType::SecuritySandboxViolation`] entries.
+    pub fn with_action_log(mut self, log: Arc<ActionLog>) -> Self {
+        self.action_log = Some(log);
+        self
     }
 
     /// Check whether `tool_name` may access `resource`.
+    ///
+    /// Path checks use [`std::path::Path::starts_with`], which operates at
+    /// path-component boundaries, preventing bypass via prefix extensions
+    /// (e.g. `/tmp/workdir2/...` does **not** match prefix `/tmp/workdir`).
+    ///
+    /// Write accesses additionally require `allow_fs_write` to be set in
+    /// the tool's [`SandboxProfile`].
     ///
     /// # Errors
     ///
@@ -186,15 +247,39 @@ impl<'a> SandboxEnforcer<'a> {
             .get(tool_name)
             .ok_or_else(|| SandboxError::NoProfile(tool_name.to_owned()))?;
 
+        let result = self.check_inner(tool_name, profile, resource);
+        if let Err(ref e) = result {
+            self.emit_violation(tool_name, &e.to_string());
+        }
+        result
+    }
+
+    fn check_inner(
+        &self,
+        tool_name: &str,
+        profile: &SandboxProfile,
+        resource: &SandboxResource,
+    ) -> Result<(), SandboxError> {
         match resource {
-            SandboxResource::Path(path) => {
+            SandboxResource::Path { path, access } => {
+                // Use std::path::Path::starts_with for component-boundary checks
+                // so that /tmp/workdir2/file does NOT match prefix /tmp/workdir.
+                let path_obj = Path::new(path);
                 let allowed = profile
                     .allowed_paths
                     .iter()
-                    .any(|prefix| path.starts_with(prefix.as_str()));
+                    .any(|prefix| path_obj.starts_with(Path::new(prefix)));
                 if !allowed {
                     warn!(tool = tool_name, path, "sandbox: path denied");
                     return Err(SandboxError::PathNotAllowed {
+                        tool: tool_name.to_owned(),
+                        path: path.clone(),
+                    });
+                }
+                // Enforce write restriction.
+                if matches!(access, PathAccess::Write) && !profile.allow_fs_write {
+                    warn!(tool = tool_name, path, "sandbox: write access denied");
+                    return Err(SandboxError::WriteNotAllowed {
                         tool: tool_name.to_owned(),
                         path: path.clone(),
                     });
@@ -230,6 +315,19 @@ impl<'a> SandboxEnforcer<'a> {
         }
         Ok(())
     }
+
+    fn emit_violation(&self, tool_name: &str, reason: &str) {
+        if let Some(log) = &self.action_log {
+            let entry = ActionLogEntry::new(
+                EventType::SecuritySandboxViolation,
+                Actor::System,
+                None,
+                None,
+                serde_json::json!({"tool": tool_name, "reason": reason}),
+            );
+            log.append(entry);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -256,7 +354,7 @@ mod tests {
         let policy = make_policy();
         let enforcer = SandboxEnforcer::new(&policy);
         assert!(enforcer
-            .check("db-tool", &SandboxResource::Path("/tmp/db-workdir/data.csv".into()))
+            .check("db-tool", &SandboxResource::read_path("/tmp/db-workdir/data.csv"))
             .is_ok());
     }
 
@@ -265,9 +363,44 @@ mod tests {
         let policy = make_policy();
         let enforcer = SandboxEnforcer::new(&policy);
         assert!(matches!(
-            enforcer.check("db-tool", &SandboxResource::Path("/etc/passwd".into())),
+            enforcer.check("db-tool", &SandboxResource::read_path("/etc/passwd")),
             Err(SandboxError::PathNotAllowed { .. })
         ));
+    }
+
+    #[test]
+    fn path_prefix_extension_bypass_prevented() {
+        // /tmp/db-workdir2/file must NOT match the allowed prefix /tmp/db-workdir.
+        let policy = make_policy();
+        let enforcer = SandboxEnforcer::new(&policy);
+        assert!(matches!(
+            enforcer.check("db-tool", &SandboxResource::read_path("/tmp/db-workdir2/evil")),
+            Err(SandboxError::PathNotAllowed { .. })
+        ));
+    }
+
+    #[test]
+    fn write_denied_when_flag_not_set() {
+        let policy = make_policy(); // allow_fs_write = false
+        let enforcer = SandboxEnforcer::new(&policy);
+        assert!(matches!(
+            enforcer.check("db-tool", &SandboxResource::write_path("/tmp/db-workdir/out.csv")),
+            Err(SandboxError::WriteNotAllowed { .. })
+        ));
+    }
+
+    #[test]
+    fn write_allowed_when_flag_is_set() {
+        let mut policy = SandboxPolicy::new();
+        policy.register(
+            SandboxProfile::deny_all("writer-tool")
+                .with_path("/tmp/writer-workdir")
+                .with_fs_write(),
+        );
+        let enforcer = SandboxEnforcer::new(&policy);
+        assert!(enforcer
+            .check("writer-tool", &SandboxResource::write_path("/tmp/writer-workdir/out.csv"))
+            .is_ok());
     }
 
     #[test]
@@ -309,7 +442,7 @@ mod tests {
         let policy = make_policy();
         let enforcer = SandboxEnforcer::new(&policy);
         assert!(matches!(
-            enforcer.check("unknown-tool", &SandboxResource::Path("/tmp".into())),
+            enforcer.check("unknown-tool", &SandboxResource::read_path("/tmp")),
             Err(SandboxError::NoProfile(_))
         ));
     }
@@ -319,8 +452,22 @@ mod tests {
         let mut policy = SandboxPolicy::new();
         policy.register(SandboxProfile::deny_all("bare-tool"));
         let enforcer = SandboxEnforcer::new(&policy);
-        assert!(enforcer.check("bare-tool", &SandboxResource::Path("/tmp".into())).is_err());
+        assert!(enforcer.check("bare-tool", &SandboxResource::read_path("/tmp")).is_err());
         assert!(enforcer.check("bare-tool", &SandboxResource::Host("example.com".into())).is_err());
         assert!(enforcer.check("bare-tool", &SandboxResource::Model("any".into())).is_err());
+    }
+
+    #[test]
+    fn violation_emits_action_log_event() {
+        use ify_controller::action_log::{ActionLog, EventType};
+        let log = ActionLog::new(16);
+        let mut rx = log.subscribe();
+        let mut policy = SandboxPolicy::new();
+        policy.register(SandboxProfile::deny_all("restricted"));
+        let enforcer = SandboxEnforcer::new(&policy).with_action_log(log);
+        let _ = enforcer.check("restricted", &SandboxResource::read_path("/etc/passwd"));
+
+        let entry = rx.try_recv().expect("ActionLog entry must be emitted on violation");
+        assert_eq!(entry.event_type, EventType::SecuritySandboxViolation);
     }
 }

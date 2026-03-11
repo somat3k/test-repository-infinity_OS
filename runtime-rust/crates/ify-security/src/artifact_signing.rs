@@ -88,17 +88,22 @@ impl ArtifactSigner {
 
     /// Sign `payload` and return a [`SignedArtifact`].
     ///
+    /// The payload is serialized using a canonical JSON representation
+    /// (object keys sorted lexicographically at every nesting level) so
+    /// that two semantically identical `Value`s always produce the same
+    /// byte string, regardless of the insertion order used by the caller.
+    ///
     /// # Errors
     ///
     /// Returns [`SigningError::Serialization`] if `payload` cannot be
-    /// serialized to a canonical byte string.
+    /// serialized.
     pub fn sign(
         &self,
         artifact_id: Uuid,
         payload: serde_json::Value,
     ) -> Result<SignedArtifact, SigningError> {
-        let canonical = serde_json::to_vec(&payload)
-            .map_err(|e| SigningError::Serialization(e.to_string()))?;
+        let canonical = canonical_json_bytes(&payload)
+            .map_err(|e| SigningError::Serialization(e))?;
         let sig_bytes = self.sign_bytes(&canonical);
         Ok(SignedArtifact {
             artifact_id,
@@ -141,13 +146,17 @@ impl ArtifactVerifier {
 
     /// Verify the signature on `artifact`.
     ///
+    /// The same canonical JSON serialisation (sorted keys) is used as during
+    /// signing, so the check is stable regardless of how the `Value` was
+    /// constructed.
+    ///
     /// # Errors
     ///
     /// Returns [`SigningError::VerificationFailed`] when the recomputed
     /// signature does not match the stored one.
     pub fn verify(&self, artifact: &SignedArtifact) -> Result<(), SigningError> {
-        let canonical = serde_json::to_vec(&artifact.payload)
-            .map_err(|e| SigningError::Serialization(e.to_string()))?;
+        let canonical = canonical_json_bytes(&artifact.payload)
+            .map_err(|e| SigningError::Serialization(e))?;
         let expected = self.sign_bytes(&canonical);
         if hex_encode(&expected) != artifact.signature.value {
             return Err(SigningError::VerificationFailed {
@@ -173,6 +182,35 @@ impl ArtifactVerifier {
 
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Produce a deterministic canonical JSON byte string by sorting object keys
+/// lexicographically at every nesting level.
+///
+/// This ensures that two semantically identical `serde_json::Value` objects
+/// that differ only in map-key insertion order produce identical byte strings,
+/// which is required for stable signature verification.
+fn canonical_json_bytes(value: &serde_json::Value) -> Result<Vec<u8>, String> {
+    let canonical = canonical_json_value(value);
+    serde_json::to_vec(&canonical).map_err(|e| e.to_string())
+}
+
+fn canonical_json_value(value: &serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(map) => {
+            let mut sorted: Vec<(&String, &serde_json::Value)> = map.iter().collect();
+            sorted.sort_by_key(|(k, _)| *k);
+            let canonical_map: serde_json::Map<String, serde_json::Value> = sorted
+                .into_iter()
+                .map(|(k, v)| (k.clone(), canonical_json_value(v)))
+                .collect();
+            serde_json::Value::Object(canonical_map)
+        }
+        serde_json::Value::Array(arr) => {
+            serde_json::Value::Array(arr.iter().map(canonical_json_value).collect())
+        }
+        other => other.clone(),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -224,5 +262,34 @@ mod tests {
         let (signer, _) = signer_and_verifier();
         let signed = signer.sign(Uuid::new_v4(), serde_json::json!({})).unwrap();
         assert_eq!(signed.signature.key_id, "test-key-v1");
+    }
+
+    #[test]
+    fn canonical_json_different_key_order_produces_same_signature() {
+        // Build two Values with the same keys in different insertion orders.
+        let mut map_a = serde_json::Map::new();
+        map_a.insert("z".into(), serde_json::json!(1));
+        map_a.insert("a".into(), serde_json::json!(2));
+        let value_a = serde_json::Value::Object(map_a);
+
+        let mut map_b = serde_json::Map::new();
+        map_b.insert("a".into(), serde_json::json!(2));
+        map_b.insert("z".into(), serde_json::json!(1));
+        let value_b = serde_json::Value::Object(map_b);
+
+        let (signer, verifier) = signer_and_verifier();
+        let id = Uuid::new_v4();
+        let signed_a = signer.sign(id, value_a).unwrap();
+
+        // Verify using value_b (same semantic content, different key order).
+        let signed_b_check = SignedArtifact {
+            artifact_id: id,
+            payload: value_b,
+            signature: signed_a.signature.clone(),
+        };
+        assert!(
+            verifier.verify(&signed_b_check).is_ok(),
+            "verification must succeed for semantically identical payloads regardless of key order"
+        );
     }
 }

@@ -157,17 +157,24 @@ impl PrivilegedAuditLog {
     ///
     /// # Errors
     ///
-    /// Returns [`AuditError::Storage`] if the underlying mutex is poisoned.
+    /// - Returns [`AuditError::MissingCapabilityContext`] when `caps` does not
+    ///   contain the capability required by `kind`.
+    /// - Returns [`AuditError::Storage`] if the underlying mutex is poisoned.
     pub fn record(
         &self,
         kind: PrivilegedActionKind,
-        actor: impl Into<String>,
+        actor: Actor,
         dim: DimensionId,
         task: TaskId,
         caps: Capabilities,
         payload: serde_json::Value,
     ) -> Result<(), AuditError> {
-        let actor_str: String = actor.into();
+        // Validate that the caller holds the required capability for this action.
+        if !caps.contains(kind.required_capability()) {
+            return Err(AuditError::MissingCapabilityContext);
+        }
+
+        let actor_str = actor_to_string(&actor);
         let record_id = Uuid::new_v4();
         let occurred_at_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -198,7 +205,7 @@ impl PrivilegedAuditLog {
         // all ActionLog subscribers (mesh, telemetry, etc.).
         let entry = ActionLogEntry::new(
             kind.event_type(),
-            Actor::Agent(actor_str),
+            actor,
             Some(dim),
             Some(task),
             payload,
@@ -225,16 +232,40 @@ impl PrivilegedAuditLog {
 
     /// Verify the hash chain integrity.
     ///
-    /// Returns `Ok(())` when every record's `prev_hash` matches the hash of
-    /// its predecessor, or an error describing the first broken link.
+    /// For each record this method:
+    /// 1. Recomputes the record's hash from its stored fields and checks it
+    ///    matches the stored `hash` value (field-level tamper detection).
+    /// 2. Checks that the record's `prev_hash` matches the `hash` of the
+    ///    preceding record (chain-level tamper detection).
+    ///
+    /// Returns `Ok(())` only when both checks pass for every record.
     ///
     /// # Errors
     ///
-    /// Returns [`AuditError::Storage`] if the mutex is poisoned.
+    /// Returns [`AuditError::Storage`] if the mutex is poisoned or if any
+    /// tamper is detected.
     pub fn verify_chain(&self) -> Result<(), AuditError> {
         let records = self.records.lock().map_err(|_| AuditError::Storage("lock poisoned".into()))?;
         let mut prev = String::new();
         for (i, record) in records.iter().enumerate() {
+            // 1. Recompute hash from fields and verify it matches the stored value.
+            let recomputed = AuditRecord::compute_hash(
+                record.record_id,
+                record.kind,
+                &record.actor,
+                record.dimension_id,
+                record.task_id,
+                record.occurred_at_ms,
+                &record.prev_hash,
+                &record.payload,
+            );
+            if recomputed != record.hash {
+                return Err(AuditError::Storage(format!(
+                    "record {i} hash mismatch: stored '{}', recomputed '{}'",
+                    record.hash, recomputed
+                )));
+            }
+            // 2. Verify chain linkage.
             if record.prev_hash != prev {
                 return Err(AuditError::Storage(format!(
                     "hash chain broken at record index {i}: expected prev_hash '{}', got '{}'",
@@ -261,6 +292,20 @@ impl PrivilegedAuditLog {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// Convert an [`Actor`] to a display string for storage in [`AuditRecord::actor`].
+fn actor_to_string(actor: &Actor) -> String {
+    match actor {
+        Actor::User(name) => format!("user:{name}"),
+        Actor::Agent(name) => format!("agent:{name}"),
+        Actor::System => "system".to_owned(),
+        Actor::Kernel => "kernel".to_owned(),
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -281,7 +326,7 @@ mod tests {
         let task = TaskId::new();
         log.record(
             PrivilegedActionKind::ReadSecret,
-            "agent-1",
+            Actor::Agent("agent-1".into()),
             dim,
             task,
             Capabilities::READ_SECRETS,
@@ -291,6 +336,42 @@ mod tests {
         assert_eq!(log.len(), 1);
         let records = log.all_records().unwrap();
         assert_eq!(records[0].kind, PrivilegedActionKind::ReadSecret);
+        assert_eq!(records[0].actor, "agent:agent-1");
+    }
+
+    #[test]
+    fn user_actor_stored_correctly() {
+        let log = make_log();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        log.record(
+            PrivilegedActionKind::Deploy,
+            Actor::User("alice".into()),
+            dim,
+            task,
+            Capabilities::DEPLOY,
+            serde_json::json!({}),
+        )
+        .unwrap();
+        let records = log.all_records().unwrap();
+        assert_eq!(records[0].actor, "user:alice");
+    }
+
+    #[test]
+    fn record_rejected_for_insufficient_capability() {
+        let log = make_log();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        // DEPLOY cap is required for Deploy action, but we pass NONE.
+        let result = log.record(
+            PrivilegedActionKind::Deploy,
+            Actor::Agent("agent".into()),
+            dim,
+            task,
+            Capabilities::NONE,
+            serde_json::json!({}),
+        );
+        assert!(matches!(result, Err(AuditError::MissingCapabilityContext)));
     }
 
     #[test]
@@ -301,7 +382,7 @@ mod tests {
             let task = TaskId::new();
             log.record(
                 PrivilegedActionKind::Deploy,
-                format!("agent-{i}"),
+                Actor::Agent(format!("agent-{i}")),
                 dim,
                 task,
                 Capabilities::DEPLOY,
@@ -319,7 +400,7 @@ mod tests {
         let task = TaskId::new();
         log.record(
             PrivilegedActionKind::AdminChange,
-            "admin",
+            Actor::Agent("admin".into()),
             dim,
             task,
             Capabilities::ADMIN,
@@ -327,12 +408,37 @@ mod tests {
         )
         .unwrap();
 
-        // Tamper with the stored record.
+        // Tamper with the stored record's prev_hash — chain check should catch this.
         {
             let mut records = log.records.lock().unwrap();
             records[0].prev_hash = "tampered".to_string();
         }
 
+        assert!(log.verify_chain().is_err());
+    }
+
+    #[test]
+    fn tampered_record_field_breaks_hash_check() {
+        let log = make_log();
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        log.record(
+            PrivilegedActionKind::AdminChange,
+            Actor::Agent("admin".into()),
+            dim,
+            task,
+            Capabilities::ADMIN,
+            serde_json::json!({}),
+        )
+        .unwrap();
+
+        // Tamper with a field value while leaving prev_hash and hash intact.
+        {
+            let mut records = log.records.lock().unwrap();
+            records[0].actor = "attacker".to_string();
+        }
+
+        // verify_chain recomputes the hash and must detect the mismatch.
         assert!(log.verify_chain().is_err());
     }
 

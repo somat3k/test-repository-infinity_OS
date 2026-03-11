@@ -28,16 +28,19 @@ This checklist must be completed and signed off by the security-agent and a desi
 
 - [x] `InputValidator` rules registered for all six `BoundaryLayer` variants.
 - [x] Validation runs before data crosses any layer boundary (canvas→runtime, runtime→kernel, mesh write, tool invocation, agent input, API ingress).
-- [x] `SecurityValidationFailed` ActionLog event emitted on rejection.
+- [x] `SecurityValidationFailed` ActionLog event emitted on rejection when ActionLog attached via `InputValidator::with_action_log` (otherwise `tracing::warn!` only).
 - [ ] **GA gate**: Fuzz-test all `ValidationRule` implementations with corpus of malformed inputs (see Epic Q).
 - [ ] **GA gate**: Confirm no boundary accepts raw user input without passing through `InputValidator`.
+- [ ] **GA gate**: Ensure `InputValidator` is constructed with an `ActionLog` in all production call sites.
 
 ---
 
 ## 3. Audit Trail
 
 - [x] `PrivilegedAuditLog::record` called for every action requiring `CAP_DEPLOY`, `CAP_READ_SECRETS`, `CAP_ADMIN`, `CAP_PUBLISH_MARKETPLACE`.
-- [x] Hash-chain integrity verifiable via `PrivilegedAuditLog::verify_chain`.
+- [x] `record()` validates that `caps` contains `kind.required_capability()`; returns `MissingCapabilityContext` error otherwise.
+- [x] `record()` accepts `Actor` (User/Agent/System/Kernel) and stores the kind in the audit record.
+- [x] `verify_chain()` recomputes each record's hash from its fields (tamper detection) and validates chain linkage.
 - [x] Audit records forwarded to ActionLog for mesh persistence and telemetry.
 - [ ] **GA gate**: Audit records retained for ≥ 12 months (per `docs/governance/audit-policy.md`).
 - [ ] **GA gate**: Audit bundle export path tested for compliance review.
@@ -49,10 +52,11 @@ This checklist must be completed and signed off by the security-agent and a desi
 
 - [x] All mesh artifacts and deployment payloads signed via `ArtifactSigner` before publication.
 - [x] All consumers call `ArtifactVerifier::verify` before processing an artifact.
-- [x] `SecurityArtifactVerified` / `SecurityArtifactVerificationFailed` ActionLog events emitted.
+- [x] Canonical JSON (sorted keys at every nesting level) used for signing so semantically identical payloads always verify correctly regardless of key insertion order.
 - [ ] **GA gate**: Replace FNV-based signing with Ed25519 (`ed25519-dalek` crate).
 - [ ] **GA gate**: Key rotation procedure documented and tested.
 - [ ] **GA gate**: Artifact signing keys stored in HSM or OS keychain, never in source.
+- [ ] **GA gate**: Emit `SecurityArtifactVerified` / `SecurityArtifactVerificationFailed` ActionLog events at artifact verification call sites.
 
 ---
 
@@ -60,10 +64,12 @@ This checklist must be completed and signed off by the security-agent and a desi
 
 - [x] Every tool has a `SandboxProfile` registered in `SandboxPolicy`.
 - [x] `SandboxEnforcer::check` called before any tool filesystem, network, or model access.
-- [x] `SecuritySandboxViolation` ActionLog event emitted on denial.
+- [x] Path checks use `std::path::Path::starts_with` (component boundary), preventing prefix-extension bypass attacks.
+- [x] `PathAccess::Write` requires `allow_fs_write = true`; denied accesses return `SandboxError::WriteNotAllowed`.
+- [x] `SecuritySandboxViolation` ActionLog event emitted on denial when ActionLog attached via `SandboxEnforcer::with_action_log` (otherwise `tracing::warn!` only).
 - [ ] **GA gate**: Sandbox escape tests pass (see Epic Q security SAST/DAST pipeline).
 - [ ] **GA gate**: OS-level sandboxing (e.g., seccomp, namespaces) applied to tool subprocess execution.
-- [ ] **GA gate**: `allow_fs_write` and `allow_network` default to `false`; explicit grant required.
+- [ ] **GA gate**: Ensure `SandboxEnforcer` is constructed with an `ActionLog` in all production call sites.
 
 ---
 
@@ -82,7 +88,7 @@ This checklist must be completed and signed off by the security-agent and a desi
 
 - [x] SBOM generated at build time with all direct and transitive dependencies.
 - [x] `SupplyChainVerifier::verify_sbom` run before installation of any component.
-- [x] `SecuritySupplyChainVerified` ActionLog event emitted after successful verification.
+- [ ] **GA gate**: `SecuritySupplyChainVerified` ActionLog event emitted after successful verification (currently only `Result` return).
 - [ ] **GA gate**: Replace FNV-based component signing with Ed25519.
 - [ ] **GA gate**: SBOM published alongside every release artifact.
 - [ ] **GA gate**: `Sbom::vulnerable_components()` checked in CI; build fails on any known CVE with CVSS ≥ 7.0.
@@ -94,10 +100,12 @@ This checklist must be completed and signed off by the security-agent and a desi
 
 - [x] `PolicyEngine` configured with rules covering all principal kinds, action types, and resource kinds.
 - [x] Default-deny posture: unmatched requests return `Decision::Deny`.
-- [x] `SecurityAccessDenied` ActionLog event emitted for every denied request.
+- [x] Rules evaluated in priority order (ascending); ties have unspecified order and must not be relied upon.
+- [x] `SecurityAccessDenied` ActionLog event emitted for every denied request (explicit deny or default-deny) when ActionLog attached via `PolicyEngine::with_action_log` (otherwise `tracing::warn!` only).
 - [ ] **GA gate**: Policy rules reviewed and approved by security-agent before GA.
 - [ ] **GA gate**: Rate-limit rules enforced per dimension to prevent task queue exhaustion.
 - [ ] **GA gate**: Policy rule changes require a signed ActionLog entry (`PrivilegedAdminChange`).
+- [ ] **GA gate**: Ensure `PolicyEngine` is constructed with an `ActionLog` in all production call sites.
 
 ---
 

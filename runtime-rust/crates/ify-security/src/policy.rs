@@ -2,14 +2,18 @@
 //!
 //! [`PolicyEngine`] evaluates a prioritised list of [`PolicyRule`]s against
 //! a [`PolicyRequest`] and returns a [`Decision`].  Rules are evaluated in
-//! registration order; the first matching rule wins.  If no rule matches,
-//! the default decision is [`Decision::Deny`].
+//! priority order (ascending — lower numbers first); the first matching rule
+//! wins.  When multiple rules share the same priority, their relative
+//! evaluation order is not guaranteed and must not be relied upon.  If no
+//! rule matches, the default decision is [`Decision::Deny`].
 //!
 //! Rules match on principal ID, action type, resource kind, and optional
 //! dimension scope.  Conditions use a conjunction (all conditions must hold).
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use ify_controller::action_log::{ActionLog, ActionLogEntry, Actor, EventType};
 use ify_core::DimensionId;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -221,14 +225,26 @@ impl PolicyRule {
 /// Rules are stored in a flat list sorted by priority at insertion time.
 /// The first matching rule determines the decision.  If no rule matches,
 /// [`Decision::Deny`] is returned (default-deny posture).
+///
+/// When an [`ActionLog`] is attached via [`PolicyEngine::with_action_log`],
+/// every deny decision (whether from an explicit deny rule or the default)
+/// emits a [`EventType::SecurityAccessDenied`] entry.
 pub struct PolicyEngine {
     rules: Vec<PolicyRule>,
+    action_log: Option<Arc<ActionLog>>,
 }
 
 impl PolicyEngine {
-    /// Create an engine with no rules (default-deny).
+    /// Create an engine with no rules (default-deny) and no ActionLog.
     pub fn new() -> Self {
-        Self { rules: Vec::new() }
+        Self { rules: Vec::new(), action_log: None }
+    }
+
+    /// Attach an [`ActionLog`] so that deny decisions emit
+    /// [`EventType::SecurityAccessDenied`] entries.
+    pub fn with_action_log(mut self, log: Arc<ActionLog>) -> Self {
+        self.action_log = Some(log);
+        self
     }
 
     /// Add a rule.  Rules are kept sorted by `priority` (ascending).
@@ -260,7 +276,9 @@ impl PolicyEngine {
 
     /// Evaluate `request` against all rules and return the decision.
     ///
-    /// Returns [`Decision::Deny`] if no rule matches.
+    /// Returns [`Decision::Deny`] if no rule matches.  If an ActionLog is
+    /// attached, a [`EventType::SecurityAccessDenied`] entry is emitted for
+    /// every deny outcome (explicit deny rule or default-deny).
     pub fn evaluate(&self, request: &PolicyRequest) -> Decision {
         for rule in &self.rules {
             if rule.matches(request) {
@@ -272,6 +290,9 @@ impl PolicyEngine {
                     resource = %request.resource,
                     "policy rule matched"
                 );
+                if rule.decision == Decision::Deny {
+                    self.emit_access_denied(request, Some(&rule.id));
+                }
                 return rule.decision;
             }
         }
@@ -281,7 +302,27 @@ impl PolicyEngine {
             resource = %request.resource,
             "no policy rule matched; default deny"
         );
+        self.emit_access_denied(request, None);
         Decision::Deny
+    }
+
+    fn emit_access_denied(&self, request: &PolicyRequest, rule_id: Option<&str>) {
+        if let Some(log) = &self.action_log {
+            let entry = ActionLogEntry::new(
+                EventType::SecurityAccessDenied,
+                Actor::System,
+                request.dimension_id,
+                None,
+                serde_json::json!({
+                    "principal_id": request.principal_id,
+                    "principal_kind": request.principal_kind,
+                    "action": format!("{:?}", request.action),
+                    "resource": request.resource,
+                    "rule_id": rule_id,
+                }),
+            );
+            log.append(entry);
+        }
     }
 
     /// Number of registered rules.
@@ -414,5 +455,21 @@ mod tests {
         let dev_req = PolicyRequest::new("u1", "user", ActionType::Write, "db")
             .with_context("environment", "development");
         assert_eq!(engine.evaluate(&dev_req), Decision::Deny); // no allow rule
+    }
+
+    #[test]
+    fn deny_emits_action_log_event() {
+        use ify_controller::action_log::{ActionLog, EventType};
+        let log = ActionLog::new(16);
+        let mut rx = log.subscribe();
+        let mut engine = PolicyEngine::new().with_action_log(log);
+        engine.add_rule(allow_agents_read()).unwrap();
+
+        // A non-agent principal requesting read should default-deny and emit.
+        let req = PolicyRequest::new("user-1", "user", ActionType::Read, "artifact-1");
+        assert_eq!(engine.evaluate(&req), Decision::Deny);
+
+        let entry = rx.try_recv().expect("ActionLog entry must be emitted on deny");
+        assert_eq!(entry.event_type, EventType::SecurityAccessDenied);
     }
 }
