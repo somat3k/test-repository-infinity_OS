@@ -68,6 +68,7 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [ ] Add deterministic serialization/deserialization (stable ordering + schema versioning).
 - [ ] Implement cycle detection and execution-order planning.
 - [ ] Implement node execution contracts (start/progress/complete/fail/cancel).
+- [-] Add advanced flow control engine (conditional/loop/fallback + ML score gating). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/flow_control.rs
 - [ ] Add graph diff/patch system (for collaborative and agent edits).
 - [ ] Add graph validation (type compatibility, missing params, forbidden edges).
 - [ ] Add subgraphs/macros (reuse, parameterization, versioning).

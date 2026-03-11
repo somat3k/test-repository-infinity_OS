@@ -85,7 +85,21 @@ All ActionLog entries share a common envelope:
 | `node.unlinked` | A connection was removed. | `source_port`, `target_port` |
 | `graph.serialized` | The full graph was snapshotted. | `schema_version`, `artifact_id` |
 
-### 3.5 Agent Events
+### 3.5 Flow Control Events
+
+| Event Type | Description | Required Payload Fields |
+|------------|-------------|------------------------|
+| `flow.evaluated` | A flow control decision was evaluated. | `step_id`, `decision`, `matched` |
+| `flow.advanced` | Flow advanced to the next step. | `from`, `to` |
+
+### 3.6 Chat Events
+
+| Event Type | Description | Required Payload Fields |
+|------------|-------------|------------------------|
+| `chat.request_received` | A chat request was received for payload adaptation. | `request_id`, `message` |
+| `chat.payload_generated` | A chat payload was generated for execution. | `request_id`, `intent` |
+
+### 3.7 Agent Events
 
 | Event Type | Description | Required Payload Fields |
 |------------|-------------|------------------------|
@@ -94,7 +108,7 @@ All ActionLog entries share a common envelope:
 | `agent.tool_result` | A tool returned a result. | `tool_name`, `result_artifact_id` |
 | `agent.evaluated` | An agent's output was scored. | `evaluator_id`, `score` |
 
-### 3.6 Controller Events
+### 3.8 Controller Events
 
 | Event Type | Description | Required Payload Fields |
 |------------|-------------|------------------------|
@@ -103,7 +117,7 @@ All ActionLog entries share a common envelope:
 | `controller.isolated` | Controller isolated (sandbox mode). | `reason` |
 | `controller.disposed` | Controller lifecycle ended. | `lifetime_ms` |
 
-### 3.7 System / Kernel Events
+### 3.9 System / Kernel Events
 
 | Event Type | Description | Required Payload Fields |
 |------------|-------------|------------------------|
