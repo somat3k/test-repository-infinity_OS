@@ -522,6 +522,27 @@ pub struct PatchApplyResult {
     pub conflict: bool,
 }
 
+/// Structured request for applying a patch with revision tracking.
+#[derive(Debug, Clone)]
+pub struct PatchRequest {
+    /// Node being patched.
+    pub node_id: Uuid,
+    /// State before the patch.
+    pub before: serde_json::Value,
+    /// State after the patch.
+    pub after: serde_json::Value,
+    /// Patch operations.
+    pub ops: Vec<PatchOp>,
+    /// Task producing the patch.
+    pub task_id: TaskId,
+    /// Dimension for the patch.
+    pub dimension_id: DimensionId,
+    /// Expected revision before applying.
+    pub expected_revision: u64,
+    /// Conflict strategy to apply.
+    pub strategy: ConflictStrategy,
+}
+
 // ---------------------------------------------------------------------------
 // Mesh node state
 // ---------------------------------------------------------------------------
@@ -868,7 +889,6 @@ impl MeshArtifactStore {
     pub fn produce(&self, mut artifact: MeshArtifact) -> ArtifactId {
         self.prepare_artifact(&mut artifact);
         let id = artifact.id;
-        artifact.created_at_ms = now_ms();
         artifact.consumed = false;
 
         let dimension_id = artifact.dimension_id;
@@ -954,7 +974,6 @@ impl MeshArtifactStore {
             let mut arts = self.artifacts.lock().expect("mesh lock poisoned");
             let mut index = self.index.lock().expect("mesh index lock poisoned");
             for mut artifact in artifacts {
-                artifact.created_at_ms = now_ms();
                 artifact.consumed = false;
                 let id = artifact.id;
                 ids.push(id);
@@ -1153,16 +1172,16 @@ impl MeshArtifactStore {
         let before_fallback = before.clone();
         let after_fallback = after.clone();
         let ops_fallback = ops.clone();
-        match self.patch_with_revision(
+        match self.patch_with_revision(PatchRequest {
             node_id,
             before,
             after,
             ops,
             task_id,
             dimension_id,
-            self.current_revision(node_id),
-            ConflictStrategy::LastWriteWins,
-        ) {
+            expected_revision: self.current_revision(node_id),
+            strategy: ConflictStrategy::LastWriteWins,
+        }) {
             Ok(result) => result.artifact_id,
             Err(err) => {
                 warn!(error = %err, "mesh patch fell back to force apply");
@@ -1179,30 +1198,23 @@ impl MeshArtifactStore {
     }
 
     /// Record a diff/patch with revision validation.
-    #[allow(clippy::too_many_arguments)]
-    pub fn patch_with_revision(
-        &self,
-        node_id: Uuid,
-        before: serde_json::Value,
-        after: serde_json::Value,
-        ops: Vec<PatchOp>,
-        task_id: TaskId,
-        dimension_id: DimensionId,
-        expected_revision: u64,
-        strategy: ConflictStrategy,
-    ) -> Result<PatchApplyResult, MeshError> {
+    pub fn patch_with_revision(&self, request: PatchRequest) -> Result<PatchApplyResult, MeshError> {
         let artifact_id = ArtifactId::new();
-        let (base_revision, new_revision, conflict) =
-            self.advance_revision(node_id, expected_revision, strategy, Some(artifact_id))?;
+        let (base_revision, new_revision, conflict) = self.advance_revision(
+            request.node_id,
+            request.expected_revision,
+            request.strategy,
+            Some(artifact_id),
+        )?;
         let patch = DiffPatch {
             artifact_id,
-            dimension_id,
-            task_id,
-            node_id,
+            dimension_id: request.dimension_id,
+            task_id: request.task_id,
+            node_id: request.node_id,
             provenance: ArtifactProvenance {
-                producing_task_id: task_id,
+                producing_task_id: request.task_id,
                 producing_agent_id: None,
-                producing_node_id: Some(node_id),
+                producing_node_id: Some(request.node_id),
                 controller_id: None,
                 schema_version: "1.0.0".to_owned(),
             },
@@ -1210,9 +1222,9 @@ impl MeshArtifactStore {
             base_revision,
             new_revision,
             conflict,
-            before,
-            after,
-            ops,
+            before: request.before,
+            after: request.after,
+            ops: request.ops,
         };
 
         self.store_patch(patch);
@@ -1436,6 +1448,9 @@ impl MeshArtifactStore {
         }
         if artifact.provenance.schema_version.trim().is_empty() {
             artifact.provenance.schema_version = "1.0.0".to_owned();
+        }
+        if artifact.created_at_ms == 0 {
+            artifact.created_at_ms = now_ms();
         }
         artifact.provenance.producing_task_id = artifact.task_id;
         if artifact.provenance.producing_node_id.is_none() {
@@ -1788,7 +1803,6 @@ impl MeshArtifactBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
 
     fn make_store() -> Arc<MeshArtifactStore> {
         let log = ActionLog::new(32);
@@ -1967,42 +1981,42 @@ mod tests {
         }];
 
         let result = store
-            .patch_with_revision(
+            .patch_with_revision(PatchRequest {
                 node_id,
-                before.clone(),
-                after.clone(),
-                ops.clone(),
-                task,
-                dim,
-                0,
-                ConflictStrategy::Reject,
-            )
+                before: before.clone(),
+                after: after.clone(),
+                ops: ops.clone(),
+                task_id: task,
+                dimension_id: dim,
+                expected_revision: 0,
+                strategy: ConflictStrategy::Reject,
+            })
             .unwrap();
         assert_eq!(result.new_revision, 1);
 
-        let err = store.patch_with_revision(
+        let err = store.patch_with_revision(PatchRequest {
             node_id,
-            before.clone(),
-            after.clone(),
-            ops.clone(),
-            task,
-            dim,
-            0,
-            ConflictStrategy::Reject,
-        );
+            before: before.clone(),
+            after: after.clone(),
+            ops: ops.clone(),
+            task_id: task,
+            dimension_id: dim,
+            expected_revision: 0,
+            strategy: ConflictStrategy::Reject,
+        });
         assert!(matches!(err, Err(MeshError::ConcurrentEdit { .. })));
 
         let ok = store
-            .patch_with_revision(
+            .patch_with_revision(PatchRequest {
                 node_id,
                 before,
                 after,
                 ops,
-                task,
-                dim,
-                0,
-                ConflictStrategy::LastWriteWins,
-            )
+                task_id: task,
+                dimension_id: dim,
+                expected_revision: 0,
+                strategy: ConflictStrategy::LastWriteWins,
+            })
             .unwrap();
         assert!(ok.conflict);
     }
@@ -2121,16 +2135,16 @@ mod tests {
             new: serde_json::json!(1),
         }];
         target
-            .patch_with_revision(
+            .patch_with_revision(PatchRequest {
                 node_id,
-                before.clone(),
-                after.clone(),
-                ops.clone(),
-                task,
-                dim,
-                0,
-                ConflictStrategy::LastWriteWins,
-            )
+                before: before.clone(),
+                after: after.clone(),
+                ops: ops.clone(),
+                task_id: task,
+                dimension_id: dim,
+                expected_revision: 0,
+                strategy: ConflictStrategy::LastWriteWins,
+            })
             .unwrap();
         let snap_id = source.snapshot_node(node_id, serde_json::json!({"x": 0}), task, dim);
         let replicator = MeshReplicator::new(Arc::clone(&source), Arc::clone(&target));
@@ -2252,16 +2266,16 @@ mod tests {
         }];
 
         let result = store
-            .patch_with_revision(
+            .patch_with_revision(PatchRequest {
                 node_id,
-                before.clone(),
-                after.clone(),
-                ops.clone(),
-                task,
-                dim,
-                0,
-                ConflictStrategy::Reject,
-            )
+                before: before.clone(),
+                after: after.clone(),
+                ops: ops.clone(),
+                task_id: task,
+                dimension_id: dim,
+                expected_revision: 0,
+                strategy: ConflictStrategy::Reject,
+            })
             .unwrap();
         assert_eq!(result.new_revision, 1);
 
