@@ -223,7 +223,7 @@ impl MeshArtifactApi for MeshArtifactStore {
         &self,
         dimension_id: DimensionId,
         task_id: TaskId,
-        _node_id: Uuid,
+        node_id: Uuid,
         ops: serde_json::Value,
     ) -> ArtifactId {
         // Deserialize the JSON ops array into the concrete Vec<PatchOp>.
@@ -242,7 +242,7 @@ impl MeshArtifactApi for MeshArtifactStore {
                 }
             };
         // Concrete signature: (before, after, ops, task_id, dimension_id)
-        MeshArtifactStore::patch(self, before, after, patch_ops, task_id, dimension_id)
+        MeshArtifactStore::patch(self, node_id, before, after, patch_ops, task_id, dimension_id)
     }
 
     fn get_patch(&self, id: ArtifactId) -> Result<DiffPatch, MeshError> {
@@ -793,4 +793,3 @@ mod conformance_tests {
         assert_eq!(EDITOR_INTEGRATION_API_VERSION.major, 1);
     }
 }
-

@@ -152,16 +152,16 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add reference implementations for key interfaces. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/interfaces.rs
 
 ## M. Mesh Data Canvas
-- [ ] Implement mesh data representation and routing. (Owner: copilot, 2026-03-11)
-- [ ] Add high-volume node update batching. (Owner: copilot, 2026-03-11)
-- [ ] Validate consistency under concurrent edits. (Owner: copilot, 2026-03-11)
-- [ ] Define mesh artifact schema registry + versions. (Owner: copilot, 2026-03-11)
-- [ ] Implement mesh subscriptions (watch nodes/artifacts) with filters. (Owner: copilot, 2026-03-11)
-- [ ] Add conflict resolution strategy (OT/CRDT or patch merge). (Owner: copilot, 2026-03-11)
-- [ ] Add provenance stamping for each mesh write. (Owner: copilot, 2026-03-11)
-- [ ] Implement artifact indexing (search by tags, TaskID, node, agent). (Owner: copilot, 2026-03-11)
-- [ ] Add garbage collection for orphaned artifacts. (Owner: copilot, 2026-03-11)
-- [ ] Add mesh replication between runtime instances. (Owner: copilot, 2026-03-11)
+- [x] Implement mesh data representation and routing. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (MeshNodeState + routing/index APIs)
+- [x] Add high-volume node update batching. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (produce_batch)
+- [x] Validate consistency under concurrent edits. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (revision tracking + patch_with_revision)
+- [x] Define mesh artifact schema registry + versions. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (MeshSchemaRegistry)
+- [x] Implement mesh subscriptions (watch nodes/artifacts) with filters. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (SubscriptionFilter)
+- [x] Add conflict resolution strategy (OT/CRDT or patch merge). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (ConflictStrategy)
+- [x] Add provenance stamping for each mesh write. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (provenance for artifacts/snapshots/patches)
+- [x] Implement artifact indexing (search by tags, TaskID, node, agent). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (ArtifactIndex + query APIs)
+- [x] Add garbage collection for orphaned artifacts. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (collect_garbage)
+- [x] Add mesh replication between runtime instances. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/mesh.rs (MeshReplicator)
 
 ## N. Node Instance Grouping
 - [x] Implement instance templates from grouped nodes. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs

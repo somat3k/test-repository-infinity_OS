@@ -144,7 +144,23 @@ pub use model_runtime::{
     ReplicaPolicy,
     ReplicaProvisioningResult,
 };
-pub use mesh::{MeshArtifactBuilder, MeshArtifactStore};
+pub use mesh::{
+    ConflictStrategy,
+    GarbageCollectionPolicy,
+    GarbageCollectionReport,
+    MeshArtifactBuilder,
+    MeshArtifactStore,
+    MeshNotification,
+    MeshNotificationKind,
+    MeshNodeState,
+    MeshReplicator,
+    MeshSubscription,
+    PatchApplyResult,
+    PatchRequest,
+    SchemaDefinition,
+    SchemaVersion,
+    SubscriptionFilter,
+};
 pub use node::{Node, NodeCustomizer, NodeGraph, NodeTemplate};
 pub use orchestrator::{LocalOrchestrator, OrchestratorEvent};
 pub use registry::{BlockRegistry, RuntimeBinding};
