@@ -1439,8 +1439,25 @@ impl MeshArtifactStore {
         if artifact.provenance.producing_node_id.is_none() {
             artifact.provenance.producing_node_id = artifact.node_id;
         }
-        artifact.tags.sort();
-        artifact.tags.dedup();
+        if artifact.tags.len() > 1 {
+            let mut sorted = true;
+            let mut has_dupe = false;
+            for window in artifact.tags.windows(2) {
+                if window[0] > window[1] {
+                    sorted = false;
+                    break;
+                }
+                if window[0] == window[1] {
+                    has_dupe = true;
+                }
+            }
+            if !sorted {
+                artifact.tags.sort();
+                artifact.tags.dedup();
+            } else if has_dupe {
+                artifact.tags.dedup();
+            }
+        }
     }
 
     fn current_revision(&self, node_id: Uuid) -> u64 {
@@ -1499,9 +1516,19 @@ impl MeshArtifactStore {
         dimension_id: DimensionId,
     ) -> ArtifactId {
         let artifact_id = ArtifactId::new();
-        let (base_revision, new_revision, conflict) =
-            self.advance_revision(node_id, self.current_revision(node_id), ConflictStrategy::LastWriteWins, Some(artifact_id))
-                .unwrap_or((0, 1, true));
+        let (base_revision, new_revision, conflict) = match self.advance_revision(
+            node_id,
+            self.current_revision(node_id),
+            ConflictStrategy::LastWriteWins,
+            Some(artifact_id),
+        ) {
+            Ok(values) => values,
+            Err(err) => {
+                warn!(error = %err, "mesh patch revision advance failed");
+                let current = self.current_revision(node_id);
+                (current, current.saturating_add(1), true)
+            }
+        };
         let patch = DiffPatch {
             artifact_id,
             dimension_id,
@@ -1621,8 +1648,10 @@ impl MeshArtifactStore {
         snaps.insert(id, snapshot);
         drop(snaps);
         self.touch_node_state(node_id, |state| {
-            state.last_snapshot_id = Some(id);
-            state.revision = revision;
+            if revision >= state.revision {
+                state.last_snapshot_id = Some(id);
+                state.revision = revision;
+            }
         });
         self.notify(MeshNotification::single(
             id,
@@ -1649,8 +1678,10 @@ impl MeshArtifactStore {
         patches.insert(id, patch);
         drop(patches);
         self.touch_node_state(node_id, |state| {
-            state.last_patch_id = Some(id);
-            state.revision = revision;
+            if revision >= state.revision {
+                state.last_patch_id = Some(id);
+                state.revision = revision;
+            }
         });
         self.notify(MeshNotification::single(
             id,
