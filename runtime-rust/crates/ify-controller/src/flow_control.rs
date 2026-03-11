@@ -448,6 +448,8 @@ pub enum ComparisonOperator {
     Equal,
 }
 
+const EQUALITY_TOLERANCE: f64 = 1e-9;
+
 /// Quality gate metadata for step-level checks.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QualityGate {
@@ -482,7 +484,11 @@ impl QualityGate {
         match self.operator {
             ComparisonOperator::AtLeast => value >= self.threshold,
             ComparisonOperator::AtMost => value <= self.threshold,
-            ComparisonOperator::Equal => (value - self.threshold).abs() <= f64::EPSILON,
+            ComparisonOperator::Equal => {
+                let diff = (value - self.threshold).abs();
+                let scale = value.abs().max(self.threshold.abs()).max(1.0);
+                diff <= scale * EQUALITY_TOLERANCE
+            }
         }
     }
 
