@@ -4,6 +4,7 @@ members = [
     "crates/ify-core",
     "crates/ify-executor",
     "crates/ify-ffi",
+    "crates/ify-interfaces",
     "crates/ify-controller",
     "crates/ify-canvas",
     "crates/ify-reliability",
@@ -35,6 +36,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 ify-core       = { path = "crates/ify-core" }
 ify-executor   = { path = "crates/ify-executor" }
 ify-ffi        = { path = "crates/ify-ffi" }
+ify-interfaces = { path = "crates/ify-interfaces" }
 ify-controller = { path = "crates/ify-controller" }
 ify-canvas     = { path = "crates/ify-canvas" }
 ify-reliability = { path = "crates/ify-reliability" }

@@ -1,6 +1,6 @@
 [package]
-name        = "ify-controller"
-description = "infinityOS — blockControllerGenerator regime: controller lifecycle, ActionLog, block registry, orchestrator hooks, mesh artifact write path, node adder/customizer"
+name        = "ify-interfaces"
+description = "infinityOS — stable cross-layer API traits: EventBusApi, MeshArtifactApi, NodeExecutionApi, EditorIntegrationApi"
 version.workspace     = true
 edition.workspace     = true
 license.workspace     = true
@@ -9,11 +9,9 @@ repository.workspace  = true
 rust-version.workspace = true
 
 [dependencies]
-ify-core       = { workspace = true }
-ify-interfaces = { workspace = true }
+ify-core   = { workspace = true }
 tokio      = { workspace = true }
 thiserror  = { workspace = true }
 serde      = { workspace = true }
 serde_json = { workspace = true }
 uuid       = { workspace = true }
-tracing    = { workspace = true }

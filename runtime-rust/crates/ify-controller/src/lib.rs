@@ -67,6 +67,7 @@ pub mod controller;
 pub mod flow_control;
 pub mod graph;
 pub mod graph_query;
+pub mod interfaces;
 pub mod mesh;
 pub mod model_runtime;
 pub mod node;
