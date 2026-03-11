@@ -140,16 +140,16 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add reliability dashboard integrated in widgets. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-reliability/src/dashboard.rs
 
 ## L. Layered Module Interfaces
-- [ ] Publish IDL/spec for cross-layer APIs.
-- [ ] Add compatibility tests for interface evolution.
-- [ ] Enforce semver rules for public contracts.
-- [ ] Define stable event bus API (ActionLog + orchestration events).
-- [ ] Define mesh artifact API (read/write/subscribe) across layers.
-- [ ] Define node execution API (planner → executor → reporter).
-- [ ] Define editor integration API (interpreter attach, LSP, runtimes).
-- [ ] Add deprecation policy and migration tooling.
-- [ ] Add API conformance test suite.
-- [ ] Add reference implementations for key interfaces.
+- [x] Publish IDL/spec for cross-layer APIs. (Owner: copilot, 2026-03-11) → docs/architecture/layer-interfaces.md
+- [x] Add compatibility tests for interface evolution. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/versioning.rs, ify-controller/src/interfaces.rs
+- [x] Enforce semver rules for public contracts. (Owner: copilot, 2026-03-11) → docs/architecture/deprecation-policy.md, runtime-rust/crates/ify-interfaces/src/versioning.rs
+- [x] Define stable event bus API (ActionLog + orchestration events). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/event_bus.rs
+- [x] Define mesh artifact API (read/write/subscribe) across layers. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/mesh.rs
+- [x] Define node execution API (planner → executor → reporter). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/node_execution.rs
+- [x] Define editor integration API (interpreter attach, LSP, runtimes). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/editor.rs
+- [x] Add deprecation policy and migration tooling. (Owner: copilot, 2026-03-11) → docs/architecture/deprecation-policy.md
+- [x] Add API conformance test suite. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/interfaces.rs (conformance_tests module)
+- [x] Add reference implementations for key interfaces. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/interfaces.rs
 
 ## M. Mesh Data Canvas
 - [ ] Implement mesh data representation and routing.

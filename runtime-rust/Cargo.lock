@@ -115,6 +115,7 @@ name = "ify-controller"
 version = "0.1.0"
 dependencies = [
  "ify-core",
+ "ify-interfaces",
  "serde",
  "serde_json",
  "thiserror",
@@ -152,6 +153,18 @@ dependencies = [
  "ify-core",
  "thiserror",
  "tracing",
+]
+
+[[package]]
+name = "ify-interfaces"
+version = "0.1.0"
+dependencies = [
+ "ify-core",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
