@@ -1,0 +1,18 @@
+[package]
+name        = "ify-canvas"
+description = "infinityOS — Infinity Zoom Canvas UX Contracts: zoom levels, visibility, accessibility, selection, inspector, search, navigation, collaboration, node-adder, and performance budgets"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+authors.workspace     = true
+repository.workspace  = true
+rust-version.workspace = true
+
+[dependencies]
+ify-core       = { workspace = true }
+ify-controller = { workspace = true }
+thiserror  = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+uuid       = { workspace = true }
+tracing    = { workspace = true }

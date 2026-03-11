@@ -103,16 +103,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Add regression guardrails (perf CI thresholds). (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md, agents/performance-optimization-agent.md
 
 ## I. Infinity Zoom Canvas UX Contracts
-- [-] Define zoom-level interaction contracts and limits. (Owner: copilot, 2026-03-11)
-- [ ] Implement node visibility + detail scaling policy.
-- [ ] Add accessibility and navigation keyboard support.
-- [ ] Implement multi-select, lasso, snap-to-grid, align/distribute.
-- [ ] Add node inspector panel (params, tools, memory, logs, artifacts).
-- [ ] Implement canvas search/command palette (nodes, agents, tasks).
-- [ ] Add minimap + breadcrumbs + focus mode.
-- [ ] Add collaborative cursors and edit conflict resolution (optional).
-- [ ] Integrate seamless node adder/customizer from editor.
-- [ ] Implement canvas performance budgets (FPS + large graph handling).
+- [x] Define zoom-level interaction contracts and limits. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/zoom.rs
+- [x] Implement node visibility + detail scaling policy. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/visibility.rs
+- [x] Add accessibility and navigation keyboard support. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/accessibility.rs
+- [x] Implement multi-select, lasso, snap-to-grid, align/distribute. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/selection.rs
+- [x] Add node inspector panel (params, tools, memory, logs, artifacts). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/inspector.rs
+- [x] Implement canvas search/command palette (nodes, agents, tasks). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/search.rs
+- [x] Add minimap + breadcrumbs + focus mode. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/navigation.rs
+- [x] Add collaborative cursors and edit conflict resolution (optional). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/collaboration.rs
+- [x] Integrate seamless node adder/customizer from editor. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/node_adder.rs
+- [x] Implement canvas performance budgets (FPS + large graph handling). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/performance.rs
 Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md`](docs/architecture/epic-i-implementation.md)
 
 ## J. Job Scheduling and Task Lifecycle
