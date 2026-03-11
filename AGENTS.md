@@ -151,6 +151,7 @@ Must guarantee:
 - explicit capability requests (least privilege),
 - full ActionLog coverage and reproducibility,
 - human-auditable execution plans.
+- governance policy compliance (capability tiers, audits, release gates) per docs/governance/.
 
 ## 3) Core Concepts (What)
 
@@ -378,6 +379,7 @@ TODO.md                    # root-level A-Z epic roadmap
 6. **Reproducible builds**: pin toolchains once build systems are introduced.
 7. **Full ActionLog coverage**: no controller action is allowed without a log event.
 8. **TaskID everywhere**: TaskID is mandatory in execution, artifacts, telemetry.
+9. **Governance enforcement**: follow docs/governance policies for capability tiers, audits, dependency checks, interface compatibility, schema changes, model use, marketplace compliance, and incident response.
 
 ## 9) Definition of Done
 

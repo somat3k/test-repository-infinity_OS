@@ -77,16 +77,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [ ] Add test harness for graph execution determinism.
 
 ## G. Governance and Policies
-- [x] Define contribution and code ownership policy (CODEOWNERS + review rules). ([docs/governance/contribution-and-code-ownership.md](docs/governance/contribution-and-code-ownership.md), [CODEOWNERS](CODEOWNERS))
-- [x] Define release gates for kernel/runtime/data changes. ([docs/governance/release-gates.md](docs/governance/release-gates.md))
-- [x] Add policy checks for interface compatibility (CI). ([docs/governance/interface-compatibility-policy.md](docs/governance/interface-compatibility-policy.md))
-- [x] Define security policy for agents/tools (allowed capabilities by tier). ([docs/governance/agent-security-policy.md](docs/governance/agent-security-policy.md))
-- [x] Add audit requirements for privileged tasks (signing + retention). ([docs/governance/audit-policy.md](docs/governance/audit-policy.md))
-- [x] Add dependency policy (licenses, vulnerability scanning). ([docs/governance/dependency-policy.md](docs/governance/dependency-policy.md))
-- [x] Define model governance (which models allowed, evaluation requirements). ([docs/governance/model-governance.md](docs/governance/model-governance.md))
-- [x] Add compliance checklist for marketplace submissions. ([docs/governance/marketplace-compliance.md](docs/governance/marketplace-compliance.md))
-- [x] Add change-management policy for node schemas. ([docs/governance/schema-change-policy.md](docs/governance/schema-change-policy.md))
-- [x] Define incident response process for agent/tool compromise. ([docs/governance/incident-response.md](docs/governance/incident-response.md))
+- [x] Define contribution and code ownership policy (CODEOWNERS + review rules). (Owner: copilot, 2026-03-11) → [docs/governance/contribution-and-code-ownership.md](docs/governance/contribution-and-code-ownership.md), [CODEOWNERS](CODEOWNERS)
+- [x] Define release gates for kernel/runtime/data changes. (Owner: copilot, 2026-03-11) → [docs/governance/release-gates.md](docs/governance/release-gates.md)
+- [x] Add policy checks for interface compatibility (CI). (Owner: copilot, 2026-03-11) → [docs/governance/interface-compatibility-policy.md](docs/governance/interface-compatibility-policy.md)
+- [x] Define security policy for agents/tools (allowed capabilities by tier). (Owner: copilot, 2026-03-11) → [docs/governance/agent-security-policy.md](docs/governance/agent-security-policy.md)
+- [x] Add audit requirements for privileged tasks (signing + retention). (Owner: copilot, 2026-03-11) → [docs/governance/audit-policy.md](docs/governance/audit-policy.md)
+- [x] Add dependency policy (licenses, vulnerability scanning). (Owner: copilot, 2026-03-11) → [docs/governance/dependency-policy.md](docs/governance/dependency-policy.md)
+- [x] Define model governance (which models allowed, evaluation requirements). (Owner: copilot, 2026-03-11) → [docs/governance/model-governance.md](docs/governance/model-governance.md)
+- [x] Add compliance checklist for marketplace submissions. (Owner: copilot, 2026-03-11) → [docs/governance/marketplace-compliance.md](docs/governance/marketplace-compliance.md)
+- [x] Add change-management policy for node schemas. (Owner: copilot, 2026-03-11) → [docs/governance/schema-change-policy.md](docs/governance/schema-change-policy.md)
+- [x] Define incident response process for agent/tool compromise. (Owner: copilot, 2026-03-11) → [docs/governance/incident-response.md](docs/governance/incident-response.md)
 
 ## H. Hyperperformance Optimization
 - [x] Add performance-driven hyperparameter tuning with quick reload triggers.
