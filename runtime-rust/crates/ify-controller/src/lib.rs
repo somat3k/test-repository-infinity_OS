@@ -62,8 +62,10 @@
 #![warn(missing_docs, clippy::all)]
 
 pub mod action_log;
+pub mod connectors;
 pub mod controller;
 pub mod flow_control;
+pub mod graph;
 pub mod mesh;
 pub mod model_runtime;
 pub mod node;
@@ -143,3 +145,26 @@ pub use node::{Node, NodeCustomizer, NodeGraph, NodeTemplate};
 pub use orchestrator::{LocalOrchestrator, OrchestratorEvent};
 pub use registry::{BlockRegistry, RuntimeBinding};
 pub use task_allocator::TaskAllocator;
+
+// Epic F — Flow Graph and Node Connectivity
+pub use connectors::{ConnectorKind, ConnectorParam, ConnectorRegistry, ConnectorTemplate};
+pub use graph::{
+    FlowGraph as FlowGraphRuntime,
+    FlowGraphError,
+    FlowGraphSchema,
+    GRAPH_SCHEMA_VERSION,
+    GraphNode,
+    GraphPatch,
+    GraphPatchOp,
+    Group,
+    Link,
+    NodeExecutionContract,
+    NodeExecutionState,
+    NodeProvenance,
+    PortDataType,
+    PortDef,
+    PortDirection,
+    Subgraph,
+    ValidationIssue,
+    ValidationReport,
+};

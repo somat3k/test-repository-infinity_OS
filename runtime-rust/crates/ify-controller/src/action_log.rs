@@ -128,6 +128,34 @@ pub enum EventType {
     OrchestratorReplay,
     /// Progress event emitted by the orchestrator.
     OrchestratorProgress,
+
+    // --- Graph connectivity events (Epic F) ---
+    /// A directed link was added between two node ports.
+    LinkCreated,
+    /// A directed link was removed from the graph.
+    LinkRemoved,
+    /// A node group was created.
+    GroupCreated,
+    /// A node group was removed.
+    GroupRemoved,
+    /// A subgraph / macro was registered.
+    SubgraphCreated,
+    /// The graph passed or failed validation.
+    GraphValidated,
+    /// A diff/patch was applied to the flow graph.
+    GraphPatched,
+
+    // --- Node execution contract events (Epic F) ---
+    /// A node execution contract transitioned to Running.
+    NodeExecutionStarted,
+    /// A node execution contract emitted a progress update.
+    NodeExecutionProgress,
+    /// A node execution contract reached Complete.
+    NodeExecutionCompleted,
+    /// A node execution contract reached Failed.
+    NodeExecutionFailed,
+    /// A node execution contract was Cancelled.
+    NodeExecutionCancelled,
 }
 
 impl EventType {
@@ -168,6 +196,18 @@ impl EventType {
             Self::OrchestratorCancel => "orchestrator.cancel",
             Self::OrchestratorReplay => "orchestrator.replay",
             Self::OrchestratorProgress => "orchestrator.progress",
+            Self::LinkCreated => "link.created",
+            Self::LinkRemoved => "link.removed",
+            Self::GroupCreated => "group.created",
+            Self::GroupRemoved => "group.removed",
+            Self::SubgraphCreated => "subgraph.created",
+            Self::GraphValidated => "graph.validated",
+            Self::GraphPatched => "graph.patched",
+            Self::NodeExecutionStarted => "node_execution.started",
+            Self::NodeExecutionProgress => "node_execution.progress",
+            Self::NodeExecutionCompleted => "node_execution.completed",
+            Self::NodeExecutionFailed => "node_execution.failed",
+            Self::NodeExecutionCancelled => "node_execution.cancelled",
         }
     }
 }

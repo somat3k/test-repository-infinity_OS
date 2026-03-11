@@ -64,17 +64,17 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [-] Add snippet-to-node compiler (turn editor code into reusable node templates). (Owner: copilot, 2026-03-10)
 
 ## F. Flow Graph and Node Connectivity
-- [ ] Implement node/link/group graph data model with typed ports.
-- [ ] Add deterministic serialization/deserialization (stable ordering + schema versioning).
-- [ ] Implement cycle detection and execution-order planning.
-- [ ] Implement node execution contracts (start/progress/complete/fail/cancel).
-- [-] Add advanced flow control engine (conditional/loop/fallback + ML score gating). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/flow_control.rs
-- [ ] Add graph diff/patch system (for collaborative and agent edits).
-- [ ] Add graph validation (type compatibility, missing params, forbidden edges).
-- [ ] Add subgraphs/macros (reuse, parameterization, versioning).
-- [ ] Add node provenance (who/what/when/why) via ActionLog.
-- [ ] Add connectors for workflow nodes (HTTP, blockchain, db, ML, trading).
-- [ ] Add test harness for graph execution determinism.
+- [x] Implement node/link/group graph data model with typed ports. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add deterministic serialization/deserialization (stable ordering + schema versioning). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Implement cycle detection and execution-order planning. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Implement node execution contracts (start/progress/complete/fail/cancel). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add advanced flow control engine (conditional/loop/fallback + ML score gating). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/flow_control.rs
+- [x] Add graph diff/patch system (for collaborative and agent edits). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add graph validation (type compatibility, missing params, forbidden edges). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add subgraphs/macros (reuse, parameterization, versioning). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add node provenance (who/what/when/why) via ActionLog. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add connectors for workflow nodes (HTTP, blockchain, db, ML, trading). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/connectors.rs
+- [x] Add test harness for graph execution determinism. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
 
 ## G. Governance and Policies
 - [x] Define contribution and code ownership policy (CODEOWNERS + review rules). (Owner: copilot, 2026-03-11) → [docs/governance/contribution-and-code-ownership.md](docs/governance/contribution-and-code-ownership.md), [CODEOWNERS](CODEOWNERS)
