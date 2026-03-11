@@ -64,17 +64,17 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [-] Add snippet-to-node compiler (turn editor code into reusable node templates). (Owner: copilot, 2026-03-10)
 
 ## F. Flow Graph and Node Connectivity
-- [ ] Implement node/link/group graph data model with typed ports.
-- [ ] Add deterministic serialization/deserialization (stable ordering + schema versioning).
-- [ ] Implement cycle detection and execution-order planning.
-- [ ] Implement node execution contracts (start/progress/complete/fail/cancel).
-- [-] Add advanced flow control engine (conditional/loop/fallback + ML score gating). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/flow_control.rs
-- [ ] Add graph diff/patch system (for collaborative and agent edits).
-- [ ] Add graph validation (type compatibility, missing params, forbidden edges).
-- [ ] Add subgraphs/macros (reuse, parameterization, versioning).
-- [ ] Add node provenance (who/what/when/why) via ActionLog.
-- [ ] Add connectors for workflow nodes (HTTP, blockchain, db, ML, trading).
-- [ ] Add test harness for graph execution determinism.
+- [x] Implement node/link/group graph data model with typed ports. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add deterministic serialization/deserialization (stable ordering + schema versioning). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Implement cycle detection and execution-order planning. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Implement node execution contracts (start/progress/complete/fail/cancel). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add advanced flow control engine (conditional/loop/fallback + ML score gating). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/flow_control.rs
+- [x] Add graph diff/patch system (for collaborative and agent edits). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add graph validation (type compatibility, missing params, forbidden edges). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add subgraphs/macros (reuse, parameterization, versioning). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add node provenance (who/what/when/why) via ActionLog. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
+- [x] Add connectors for workflow nodes (HTTP, blockchain, db, ML, trading). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/connectors.rs
+- [x] Add test harness for graph execution determinism. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/graph.rs
 
 ## G. Governance and Policies
 - [x] Define contribution and code ownership policy (CODEOWNERS + review rules). (Owner: copilot, 2026-03-11) → [docs/governance/contribution-and-code-ownership.md](docs/governance/contribution-and-code-ownership.md), [CODEOWNERS](CODEOWNERS)
@@ -103,29 +103,29 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Add regression guardrails (perf CI thresholds). (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md, agents/performance-optimization-agent.md
 
 ## I. Infinity Zoom Canvas UX Contracts
-- [-] Define zoom-level interaction contracts and limits. (Owner: copilot, 2026-03-11)
-- [ ] Implement node visibility + detail scaling policy.
-- [ ] Add accessibility and navigation keyboard support.
-- [ ] Implement multi-select, lasso, snap-to-grid, align/distribute.
-- [ ] Add node inspector panel (params, tools, memory, logs, artifacts).
-- [ ] Implement canvas search/command palette (nodes, agents, tasks).
-- [ ] Add minimap + breadcrumbs + focus mode.
-- [ ] Add collaborative cursors and edit conflict resolution (optional).
-- [ ] Integrate seamless node adder/customizer from editor.
-- [ ] Implement canvas performance budgets (FPS + large graph handling).
+- [x] Define zoom-level interaction contracts and limits. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/zoom.rs
+- [x] Implement node visibility + detail scaling policy. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/visibility.rs
+- [x] Add accessibility and navigation keyboard support. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/accessibility.rs
+- [x] Implement multi-select, lasso, snap-to-grid, align/distribute. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/selection.rs
+- [x] Add node inspector panel (params, tools, memory, logs, artifacts). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/inspector.rs
+- [x] Implement canvas search/command palette (nodes, agents, tasks). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/search.rs
+- [x] Add minimap + breadcrumbs + focus mode. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/navigation.rs
+- [x] Add collaborative cursors and edit conflict resolution (optional). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/collaboration.rs
+- [x] Integrate seamless node adder/customizer from editor. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/node_adder.rs
+- [x] Implement canvas performance budgets (FPS + large graph handling). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-canvas/src/performance.rs
 Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md`](docs/architecture/epic-i-implementation.md)
 
 ## J. Job Scheduling and Task Lifecycle
-- [x] Define task states (queued/running/paused/failed/completed). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskState`)
-- [x] Implement priority-aware scheduling. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskPriority`, `JobScheduler`)
-- [x] Add retries, backoff, and cancellation semantics. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`RetryPolicy`, `CancellationToken`)
-- [x] Implement task leasing/heartbeats for distributed workers. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`Lease`)
-- [x] Implement per-dimension quotas and rate limiting. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`DimensionQuota`, `RateLimiter`)
-- [x] Add dependency-aware scheduling (DAG-based). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskDag`)
-- [x] Implement task preemption policy. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`PreemptionPolicy`, `should_preempt`)
-- [x] Add task persistence + recovery after crash/restart. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskSnapshot`)
-- [x] Add task templates (for repeated workflows). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskTemplate`, `TaskTemplateRegistry`)
-- [x] Add unique TaskID enforcement + index across dimensions. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskIndex`)
+- [x] Define task states (queued/running/paused/failed/completed). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Implement priority-aware scheduling. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add retries, backoff, and cancellation semantics. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Implement task leasing/heartbeats for distributed workers. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Implement per-dimension quotas and rate limiting. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add dependency-aware scheduling (DAG-based). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Implement task preemption policy. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add task persistence + recovery after crash/restart. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add task templates (for repeated workflows). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add unique TaskID enforcement + index across dimensions. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
 
 ## K. Kaizen Reliability Loop
 - [ ] Define weekly reliability review cadence.
@@ -164,15 +164,15 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [ ] Add mesh replication between runtime instances.
 
 ## N. Node Instance Grouping
-- [ ] Implement instance templates from grouped nodes.
-- [ ] Add clone/fork mechanics with provenance tracking.
-- [ ] Support instance-level configuration overrides.
-- [ ] Add parameter inheritance rules.
-- [ ] Add template versioning + migration.
-- [ ] Add sharing/export of templates.
-- [ ] Add locking policy (read-only templates vs editable).
-- [ ] Add marketplace publishing hooks.
-- [ ] Add test coverage for template expansion determinism.
+- [x] Implement instance templates from grouped nodes. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add clone/fork mechanics with provenance tracking. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Support instance-level configuration overrides. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add parameter inheritance rules. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add template versioning + migration. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add sharing/export of templates. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add locking policy (read-only templates vs editable). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add marketplace publishing hooks. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add test coverage for template expansion determinism. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
 - [ ] Add UI for managing templates in project window.
 
 ## O. Operational Security
