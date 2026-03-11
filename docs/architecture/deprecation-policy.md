@@ -109,7 +109,7 @@ After the grace period:
 
 ### 4.1 Compiler warnings
 
-Rust's `#[deprecated]` attribute automatically emits `E0063`-style warnings at
+Rust's `#[deprecated]` attribute causes the compiler to emit a deprecation warning at
 every call site.  Enable `#[deny(deprecated)]` in CI to turn these into hard
 errors after the grace period ends:
 

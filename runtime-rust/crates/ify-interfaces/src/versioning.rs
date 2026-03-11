@@ -37,10 +37,19 @@ impl InterfaceVersion {
 
     /// Returns `true` if `other` is backward-compatible with `self`.
     ///
-    /// Two versions are compatible when they share the same major version
-    /// and `other` is at least as new as `self`.
+    /// `other` is compatible with `self` when they share the same major version
+    /// and `other` is at least as new as `self` (comparing minor, then patch).
     pub const fn is_compatible_with(&self, other: &Self) -> bool {
-        self.major == other.major && other.minor >= self.minor
+        if self.major != other.major {
+            return false;
+        }
+        if other.minor > self.minor {
+            return true;
+        }
+        if other.minor < self.minor {
+            return false;
+        }
+        other.patch >= self.patch
     }
 }
 
@@ -101,6 +110,16 @@ mod tests {
         let v2 = InterfaceVersion::new(1, 1, 0);
         assert!(v1.is_compatible_with(&v2), "1.1 is backward-compat with 1.0");
         assert!(!v2.is_compatible_with(&v1), "1.0 is not compat with 1.1");
+    }
+
+    #[test]
+    fn version_compatibility_patch_level() {
+        let v1_0_0 = InterfaceVersion::new(1, 0, 0);
+        let v1_0_1 = InterfaceVersion::new(1, 0, 1);
+        // Consumer expecting 1.0.1 must NOT accept 1.0.0.
+        assert!(!v1_0_1.is_compatible_with(&v1_0_0), "1.0.0 is not compat with consumer expecting 1.0.1");
+        // Consumer expecting 1.0.0 accepts 1.0.1.
+        assert!(v1_0_0.is_compatible_with(&v1_0_1), "1.0.1 is backward-compat with 1.0.0");
     }
 
     #[test]

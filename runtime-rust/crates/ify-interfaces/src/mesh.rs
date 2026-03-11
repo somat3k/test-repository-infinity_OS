@@ -59,7 +59,7 @@ pub struct ArtifactProvenanceRef {
 /// Stable trait for mesh artifact write operations (produce, consume, patch).
 ///
 /// Implementors persist artifacts, enforce immutability semantics, and emit
-/// [`ActionLog`](crate::event_bus::EventBusApi) entries for every mutation.
+/// [`EventBusApi`](crate::event_bus::EventBusApi) entries for every mutation.
 ///
 /// ## Semver contract
 ///

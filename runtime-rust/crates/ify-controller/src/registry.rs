@@ -64,6 +64,15 @@ pub enum RegistryError {
     /// An attempt to bind the runtime when a binding already exists.
     #[error("block {0} is already bound to the runtime")]
     AlreadyBound(Uuid),
+
+    /// An internal invariant was violated (should not occur under normal operation).
+    #[error("internal invariant violated for block {id}: {reason}")]
+    InternalInvariant {
+        /// Block identifier.
+        id: Uuid,
+        /// Description of the violated invariant.
+        reason: &'static str,
+    },
 }
 
 // ---------------------------------------------------------------------------

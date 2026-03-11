@@ -20,13 +20,15 @@ use ify_interfaces::{
     editor::{BlockId, EditorIntegrationApi, EditorRef, InterpreterRef, RuntimeHandle},
     event_bus::{EventBusApi, OrchestratorBusApi},
     mesh::{MeshArtifactApi, MeshSubscriberApi},
-    node_execution::{NodeExecutorApi, NodeReporterApi},
+    node_execution::{NodeExecutorApi, NodePlannerApi, NodeReporterApi},
 };
 use tokio::sync::broadcast;
+use tracing::debug;
 use uuid::Uuid;
 
 use crate::{
     action_log::{ActionLog, ActionLogEntry},
+    graph::{FlowGraph, FlowGraphError, ValidationReport},
     mesh::{DiffPatch, MeshArtifact, MeshArtifactStore, MeshError, NodeSnapshot},
     orchestrator::{LocalOrchestrator, OrchestratorError, OrchestratorEvent},
     registry::{BlockRegistry, RegistryError},
@@ -76,9 +78,20 @@ impl OrchestratorBusApi for LocalOrchestrator {
         &self,
         task_id: TaskId,
         dimension_id: DimensionId,
-        _priority: u8,
-        _payload: serde_json::Value,
+        priority: u8,
+        payload: serde_json::Value,
     ) -> Result<(), OrchestratorError> {
+        // Log priority and payload via tracing so they are preserved for
+        // audit/replay.  The concrete submit stores only task identity; a
+        // future evolution of LocalOrchestrator can promote these fields into
+        // OrchestratorEvent once the data model supports it.
+        debug!(
+            %task_id,
+            %dimension_id,
+            priority,
+            %payload,
+            "OrchestratorBusApi::submit"
+        );
         LocalOrchestrator::submit(self, task_id, dimension_id)
     }
 
@@ -126,9 +139,16 @@ impl NodeExecutorApi for LocalOrchestrator {
         &self,
         task_id: TaskId,
         dimension_id: DimensionId,
-        _priority: u8,
-        _payload: serde_json::Value,
+        priority: u8,
+        payload: serde_json::Value,
     ) -> Result<(), OrchestratorError> {
+        debug!(
+            %task_id,
+            %dimension_id,
+            priority,
+            %payload,
+            "NodeExecutorApi::submit"
+        );
         LocalOrchestrator::submit(self, task_id, dimension_id)
     }
 
@@ -206,17 +226,23 @@ impl MeshArtifactApi for MeshArtifactStore {
         _node_id: Uuid,
         ops: serde_json::Value,
     ) -> ArtifactId {
+        // Deserialize the JSON ops array into the concrete Vec<PatchOp>.
+        // On parse failure, fall back to an empty ops list (the raw `ops` JSON
+        // value is still preserved as the `after` field for audit purposes).
+        let (before, after, patch_ops) =
+            match serde_json::from_value::<Vec<crate::mesh::PatchOp>>(ops.clone()) {
+                Ok(deserialized) => (serde_json::Value::Null, ops, deserialized),
+                Err(e) => {
+                    tracing::warn!(
+                        error = %e,
+                        "MeshArtifactApi::patch: failed to deserialize ops JSON; \
+                         storing empty ops list for audit"
+                    );
+                    (serde_json::Value::Null, ops, vec![])
+                }
+            };
         // Concrete signature: (before, after, ops, task_id, dimension_id)
-        // The trait provides a simplified form; adapt by using `ops` as the `after`
-        // state and an empty `before`, with a single Replace operation.
-        MeshArtifactStore::patch(
-            self,
-            serde_json::Value::Null,
-            ops,
-            vec![],
-            task_id,
-            dimension_id,
-        )
+        MeshArtifactStore::patch(self, before, after, patch_ops, task_id, dimension_id)
     }
 
     fn get_patch(&self, id: ArtifactId) -> Result<DiffPatch, MeshError> {
@@ -252,8 +278,11 @@ impl EditorIntegrationApi for BlockRegistry {
     ) -> Result<EditorRef, RegistryError> {
         // Concrete method returns the editor UUID; look up the full record after.
         BlockRegistry::create_editor(self, block_id, language)?;
-        let ei = BlockRegistry::editor_for(self, block_id)
-            .expect("editor must exist immediately after create_editor succeeds");
+        let ei =
+            BlockRegistry::editor_for(self, block_id).ok_or(RegistryError::InternalInvariant {
+                id: block_id,
+                reason: "editor not found immediately after create_editor succeeded",
+            })?;
         Ok(EditorRef {
             id: ei.id,
             dimension_id: ei.dimension_id,
@@ -269,9 +298,13 @@ impl EditorIntegrationApi for BlockRegistry {
     ) -> Result<InterpreterRef, RegistryError> {
         // Concrete method returns (); look up the editor id from the stored record.
         BlockRegistry::attach_interpreter(self, block_id, interpreter_type, config)?;
-        let editor_id = BlockRegistry::editor_for(self, block_id)
-            .expect("editor must exist after attach_interpreter succeeds")
-            .id;
+        let editor_id =
+            BlockRegistry::editor_for(self, block_id)
+                .ok_or(RegistryError::InternalInvariant {
+                    id: block_id,
+                    reason: "editor not found after attach_interpreter succeeded",
+                })?
+                .id;
         Ok(InterpreterRef {
             id: editor_id,
             interpreter_type: interpreter_type.to_owned(),
@@ -305,6 +338,56 @@ impl EditorIntegrationApi for BlockRegistry {
 }
 
 // ---------------------------------------------------------------------------
+// NodePlannerApi for FlowGraph
+// ---------------------------------------------------------------------------
+
+impl NodePlannerApi for FlowGraph {
+    /// The execution plan is a topologically sorted list of node IDs.
+    type Plan = Vec<Uuid>;
+    type Error = FlowGraphError;
+
+    /// Produce a topologically ordered execution plan.
+    ///
+    /// `dimension_id` is validated against the graph's own dimension; a
+    /// [`FlowGraphError::NodeNotFound`] is returned on mismatch (using the
+    /// sentinel `Uuid::nil()`) to keep the error type minimal.
+    ///
+    /// Returns [`Err`] if the graph contains a cycle.
+    fn plan(&self, dimension_id: DimensionId) -> Result<Vec<Uuid>, FlowGraphError> {
+        if self.schema.dimension_id != dimension_id {
+            return Err(FlowGraphError::DimensionMismatch {
+                expected: self.schema.dimension_id,
+                got: dimension_id,
+            });
+        }
+        self.topological_order()
+    }
+
+    /// Validate the graph and return all issues as human-readable strings.
+    ///
+    /// Returns `Ok(())` when the graph is valid; `Err(issues)` otherwise.
+    fn validate(&self, dimension_id: DimensionId) -> Result<(), Vec<String>> {
+        if self.schema.dimension_id != dimension_id {
+            return Err(vec![format!(
+                "dimension mismatch: graph owns {}, caller requested {}",
+                self.schema.dimension_id,
+                dimension_id,
+            )]);
+        }
+        let report: ValidationReport = FlowGraph::validate(self);
+        if report.valid {
+            Ok(())
+        } else {
+            Err(report
+                .issues
+                .into_iter()
+                .map(|issue| format!("[{}] {}", issue.kind, issue.description))
+                .collect())
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // API conformance tests (Epic L requirement)
 // ---------------------------------------------------------------------------
 
@@ -318,6 +401,7 @@ mod conformance_tests {
     use super::*;
     use crate::{
         action_log::{Actor, EventType},
+        graph::{FlowGraph, FlowGraphError},
         mesh::MeshArtifactBuilder,
         task_allocator::TaskAllocator,
     };
@@ -326,7 +410,7 @@ mod conformance_tests {
         editor::EditorIntegrationApi,
         event_bus::{EventBusApi, OrchestratorBusApi},
         mesh::{MeshArtifactApi, MeshSubscriberApi},
-        node_execution::{NodeExecutorApi, NodeReporterApi},
+        node_execution::{NodeExecutorApi, NodePlannerApi, NodeReporterApi},
     };
 
     // --- EventBusApi conformance ---
@@ -626,6 +710,73 @@ mod conformance_tests {
             editor_api.create_editor(block_id, "python").is_err(),
             "second create_editor should fail"
         );
+    }
+
+    // --- NodePlannerApi conformance ---
+
+    #[test]
+    fn node_planner_plan_empty_graph() {
+        let log = ActionLog::new(32);
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let graph = FlowGraph::new(dim, task, Arc::clone(&log));
+
+        let planner: &dyn NodePlannerApi<Plan = Vec<uuid::Uuid>, Error = FlowGraphError> =
+            &graph;
+        let plan = planner.plan(dim).expect("empty graph should produce an empty plan");
+        assert!(plan.is_empty(), "empty graph has no nodes to execute");
+    }
+
+    #[test]
+    fn node_planner_validate_valid_graph() {
+        let log = ActionLog::new(32);
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let graph = FlowGraph::new(dim, task, Arc::clone(&log));
+
+        let planner: &dyn NodePlannerApi<Plan = Vec<uuid::Uuid>, Error = FlowGraphError> =
+            &graph;
+        assert!(planner.validate(dim).is_ok(), "empty graph should be valid");
+    }
+
+    #[test]
+    fn node_planner_dimension_mismatch_returns_error() {
+        let log = ActionLog::new(32);
+        let dim = DimensionId::new();
+        let other_dim = DimensionId::new();
+        let task = TaskId::new();
+        let graph = FlowGraph::new(dim, task, Arc::clone(&log));
+
+        let planner: &dyn NodePlannerApi<Plan = Vec<uuid::Uuid>, Error = FlowGraphError> =
+            &graph;
+        assert!(
+            planner.plan(other_dim).is_err(),
+            "plan with wrong dimension should fail"
+        );
+        assert!(
+            planner.validate(other_dim).is_err(),
+            "validate with wrong dimension should fail"
+        );
+    }
+
+    #[test]
+    fn node_planner_plan_with_nodes() {
+        use crate::graph::GraphNode;
+        let log = ActionLog::new(32);
+        let dim = DimensionId::new();
+        let task = TaskId::new();
+        let mut graph = FlowGraph::new(dim, task, Arc::clone(&log));
+
+        // Add two independent nodes.
+        let node_a = GraphNode::new("node_a", "any");
+        let node_b = GraphNode::new("node_b", "any");
+        let _id_a = graph.add_node(node_a);
+        let _id_b = graph.add_node(node_b);
+
+        let planner: &dyn NodePlannerApi<Plan = Vec<uuid::Uuid>, Error = FlowGraphError> =
+            &graph;
+        let plan = planner.plan(dim).expect("plan should succeed for valid graph");
+        assert_eq!(plan.len(), 2, "plan should contain both nodes");
     }
 
     // --- Semver version constants are accessible ---

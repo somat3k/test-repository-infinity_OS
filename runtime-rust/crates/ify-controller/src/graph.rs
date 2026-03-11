@@ -162,6 +162,15 @@ pub enum FlowGraphError {
         /// Duplicated name.
         name: String,
     },
+
+    /// The provided dimension ID does not match this graph's dimension.
+    #[error("dimension mismatch: graph owns {expected}, caller provided {got}")]
+    DimensionMismatch {
+        /// Dimension this graph owns.
+        expected: DimensionId,
+        /// Dimension supplied by the caller.
+        got: DimensionId,
+    },
 }
 
 // ---------------------------------------------------------------------------

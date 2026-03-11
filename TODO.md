@@ -141,7 +141,7 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 
 ## L. Layered Module Interfaces
 - [x] Publish IDL/spec for cross-layer APIs. (Owner: copilot, 2026-03-11) → docs/architecture/layer-interfaces.md
-- [x] Add compatibility tests for interface evolution. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/versioning.rs, ify-controller/src/interfaces.rs
+- [x] Add compatibility tests for interface evolution. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/versioning.rs, runtime-rust/crates/ify-controller/src/interfaces.rs
 - [x] Enforce semver rules for public contracts. (Owner: copilot, 2026-03-11) → docs/architecture/deprecation-policy.md, runtime-rust/crates/ify-interfaces/src/versioning.rs
 - [x] Define stable event bus API (ActionLog + orchestration events). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/event_bus.rs
 - [x] Define mesh artifact API (read/write/subscribe) across layers. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-interfaces/src/mesh.rs

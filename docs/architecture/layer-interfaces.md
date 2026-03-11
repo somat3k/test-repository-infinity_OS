@@ -14,8 +14,8 @@ stable cross-layer API in infinityOS.  It defines the contract that all layers
 must honour when communicating across layer boundaries.
 
 All interfaces are published as Rust traits in the `ify-interfaces` crate.  The
-crate depends only on `ify-core` (for primitive types) so that every other layer
-can depend on it without creating circular dependencies.
+crate depends, among infinityOS crates, only on `ify-core` (for primitive types)
+so that every other layer can depend on it without creating circular dependencies.
 
 ### Dependency rule
 
@@ -91,7 +91,9 @@ OrchestratorBusApi<Event, Error>
 ```
 
 **Guarantees:**
-- `submit` is idempotent for the same `task_id` within the same dimension.
+- `submit` records the task in the orchestrator; duplicate `submit` calls for the
+  same `task_id` overwrite the previous history (no idempotency guard in the
+  current reference implementation).
 - After any terminal event (`complete`, `fail`, `cancel`), subsequent calls
   return an error rather than silently mutating state.
 - `replay` returns events in submission order.
