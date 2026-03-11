@@ -879,12 +879,12 @@ impl MeshArtifactStore {
 
         {
             let mut arts = self.artifacts.lock().expect("mesh lock poisoned");
-            arts.insert(id, artifact.clone());
+            let mut index = self.index.lock().expect("mesh index lock poisoned");
+            arts.insert(id, artifact);
+            if let Some(stored) = arts.get(&id) {
+                index.insert(stored);
+            }
         }
-        self.index
-            .lock()
-            .expect("mesh index lock poisoned")
-            .insert(&artifact);
         if let Some(node_id) = node_id {
             self.touch_node_state(node_id, |state| {
                 state.last_artifact_id = Some(id);
@@ -958,8 +958,10 @@ impl MeshArtifactStore {
                 artifact.consumed = false;
                 let id = artifact.id;
                 ids.push(id);
-                arts.insert(id, artifact.clone());
-                index.insert(&artifact);
+                arts.insert(id, artifact);
+                if let Some(stored) = arts.get(&id) {
+                    index.insert(stored);
+                }
             }
         }
 
@@ -1439,25 +1441,8 @@ impl MeshArtifactStore {
         if artifact.provenance.producing_node_id.is_none() {
             artifact.provenance.producing_node_id = artifact.node_id;
         }
-        if artifact.tags.len() > 1 {
-            let mut sorted = true;
-            let mut has_dupe = false;
-            for window in artifact.tags.windows(2) {
-                if window[0] > window[1] {
-                    sorted = false;
-                    break;
-                }
-                if window[0] == window[1] {
-                    has_dupe = true;
-                }
-            }
-            if !sorted {
-                artifact.tags.sort();
-                artifact.tags.dedup();
-            } else if has_dupe {
-                artifact.tags.dedup();
-            }
-        }
+        artifact.tags.sort();
+        artifact.tags.dedup();
     }
 
     fn current_revision(&self, node_id: Uuid) -> u64 {
@@ -1602,12 +1587,11 @@ impl MeshArtifactStore {
         let node_id = artifact.node_id;
         let tags = artifact.tags.clone();
         let content_type = artifact.content_type.clone();
-        arts.insert(id, artifact.clone());
-        drop(arts);
-        self.index
-            .lock()
-            .expect("mesh index lock poisoned")
-            .insert(&artifact);
+        let mut index = self.index.lock().expect("mesh index lock poisoned");
+        arts.insert(id, artifact);
+        if let Some(stored) = arts.get(&id) {
+            index.insert(stored);
+        }
         if let Some(node_id) = node_id {
             self.touch_node_state(node_id, |state| {
                 state.last_artifact_id = Some(id);
