@@ -77,6 +77,18 @@ pub enum EventType {
     /// Redo command applied to the node graph.
     NodeRedo,
 
+    // --- Flow control events ---
+    /// A flow control decision was evaluated.
+    FlowEvaluated,
+    /// Flow advanced to the next step.
+    FlowAdvanced,
+
+    // --- Chat events ---
+    /// A chat request was received for payload adaptation.
+    ChatRequestReceived,
+    /// A chat payload was generated for downstream execution.
+    ChatPayloadGenerated,
+
     // --- Artifact events (§3.3) ---
     /// An artifact was committed to storage.
     ArtifactProduced,
@@ -125,6 +137,10 @@ impl EventType {
             Self::NodeDeleted => "node.deleted",
             Self::NodeUndo => "node.undo",
             Self::NodeRedo => "node.redo",
+            Self::FlowEvaluated => "flow.evaluated",
+            Self::FlowAdvanced => "flow.advanced",
+            Self::ChatRequestReceived => "chat.request_received",
+            Self::ChatPayloadGenerated => "chat.payload_generated",
             Self::ArtifactProduced => "artifact.produced",
             Self::ArtifactConsumed => "artifact.consumed",
             Self::ArtifactSnapshot => "artifact.snapshot",

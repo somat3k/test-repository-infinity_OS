@@ -17,6 +17,7 @@
 //! | [`orchestrator`] | Orchestrator dispatch hooks (submit, subscribe, cancel, replay) |
 //! | [`mesh`] | Mesh-artifact write path (produce, consume, snapshot, diff/patch) |
 //! | [`node`] | Seamless node adder with undo/redo + node customizer with templates/presets |
+//! | [`flow_control`] | Advanced flow control engine with ML-aware decisions |
 //!
 //! ## Quick start
 //!
@@ -62,6 +63,7 @@
 
 pub mod action_log;
 pub mod controller;
+pub mod flow_control;
 pub mod mesh;
 pub mod node;
 pub mod orchestrator;
@@ -71,6 +73,13 @@ pub mod task_allocator;
 // Re-export the most commonly used types at the crate root for ergonomics.
 pub use action_log::{ActionLog, ActionLogEntry, Actor, EventType};
 pub use controller::{BlockController, BlockControllerError, ControllerState};
+pub use flow_control::{
+    ChatAdaptation, ChatAdapter, ChatInstructionSelection, ChatPayload, ChatPayloadBuilder,
+    ChatRequest, ChatSkillModule, ChatTool, FlowAdvance, FlowCondition, FlowContext,
+    FlowControlEngine, FlowControlError, FlowGraph, FlowState, FlowStep, FlowStepKind,
+    FlowTerminalStatus, FlowTransition, InstructionDataset, InstructionEntry, InstructionSource,
+    ModelEvaluator,
+};
 pub use mesh::{MeshArtifactBuilder, MeshArtifactStore};
 pub use node::{Node, NodeCustomizer, NodeGraph, NodeTemplate};
 pub use orchestrator::{LocalOrchestrator, OrchestratorEvent};
