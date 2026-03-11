@@ -135,7 +135,7 @@ pub use model_runtime::{
     ReplicaKernel,
     ReplicaKernelError,
     ReplicaPolicy,
-    ReplicaProvisioning,
+    ReplicaProvisioningResult,
 };
 pub use mesh::{MeshArtifactBuilder, MeshArtifactStore};
 pub use node::{Node, NodeCustomizer, NodeGraph, NodeTemplate};

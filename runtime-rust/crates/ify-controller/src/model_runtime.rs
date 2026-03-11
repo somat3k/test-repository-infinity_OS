@@ -18,6 +18,7 @@ use crate::action_log::{now_ms, ActionLog, ActionLogEntry, Actor, EventType};
 use crate::flow_control::ComparisonOperator;
 
 const COMPARISON_TOLERANCE: f64 = 1e-9;
+const ENSEMBLE_COMPLEXITY_THRESHOLD: f64 = 0.7;
 
 /// Supported model kinds for runtime coordination.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -103,8 +104,8 @@ impl HyperparameterRule {
             .get(&self.metric)
             .copied()
             .ok_or_else(|| ModelRuntimeError::MissingMetric(self.metric.clone()))?;
-        let matched = compare_metric(value, self.operator, self.threshold);
-        if matched {
+        let rule_matches = compare_metric(value, self.operator, self.threshold);
+        if rule_matches {
             Ok(Some(HyperparameterAdjustment {
                 model_id: model_id.to_owned(),
                 metric: self.metric.clone(),
@@ -585,7 +586,7 @@ pub struct ModelEnsemblePlan {
 
 /// Provisioned replica metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReplicaProvisioning {
+pub struct ReplicaProvisioningResult {
     /// Ensemble plan used for provisioning.
     pub plan: ModelEnsemblePlan,
     /// Replica handles created for this plan.
@@ -629,7 +630,10 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
     }
 
     /// Align modules and provision replicas for the given demand signal.
-    pub fn provision(&self, demand: ReplicaDemand) -> Result<ReplicaProvisioning, ModelReplicaError> {
+    pub fn provision(
+        &self,
+        demand: ReplicaDemand,
+    ) -> Result<ReplicaProvisioningResult, ModelReplicaError> {
         let plan = self.plan_modules(&demand)?;
         let mut replicas = Vec::new();
         for selection in &plan.modules {
@@ -650,7 +654,7 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
                 replicas.push(handle);
             }
         }
-        Ok(ReplicaProvisioning { plan, replicas })
+        Ok(ReplicaProvisioningResult { plan, replicas })
     }
 
     /// Release a replica by identifier.
@@ -686,7 +690,7 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
             .collect();
         scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        let needs_ensemble = complexity >= 0.7;
+        let needs_ensemble = complexity >= ENSEMBLE_COMPLEXITY_THRESHOLD;
         let mut selections = Vec::new();
         if needs_ensemble {
             let mut best_ml: Option<(ModelModule, f64)> = None;
@@ -718,10 +722,8 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
         }
 
         let base_count = selections.len().max(1) as u32;
-        let desired_total = ((demand.max_replicas as f64) * complexity)
-            .ceil()
-            .max(base_count as f64) as u32;
-        let mut remaining = desired_total.max(base_count);
+        let desired_total = desired_replica_count(demand.max_replicas, complexity, base_count);
+        let mut remaining = desired_total;
 
         let mut planned_modules = Vec::new();
         for (index, (module, score)) in selections.iter().enumerate() {
@@ -810,6 +812,14 @@ fn compare_metric(value: f64, operator: ComparisonOperator, threshold: f64) -> b
             diff <= scale * COMPARISON_TOLERANCE
         }
     }
+}
+
+fn desired_replica_count(max_replicas: u32, complexity: f64, base_count: u32) -> u32 {
+    // Scale replicas linearly with complexity while guaranteeing at least one
+    // replica per selected module.  This keeps the pool responsive for
+    // low-complexity tasks while allowing additional capacity when needed.
+    let scaled = ((max_replicas as f64) * complexity).ceil() as u32;
+    scaled.max(base_count).max(1)
 }
 
 #[cfg(test)]
@@ -944,6 +954,9 @@ mod tests {
 
         let provisioning = pool.provision(demand).unwrap();
         assert!(provisioning.plan.total_replicas >= 2);
-        assert_eq!(provisioning.replicas.len() as u32, provisioning.plan.total_replicas);
+        assert_eq!(
+            provisioning.replicas.len() as u32,
+            provisioning.plan.total_replicas
+        );
     }
 }
