@@ -94,7 +94,7 @@ pub struct HyperparameterRule {
 }
 
 impl HyperparameterRule {
-    fn evaluate(
+    fn evaluate_sample(
         &self,
         model_id: &str,
         sample: &PerformanceSample,
@@ -244,7 +244,10 @@ impl ModelPerformanceManager {
 
     /// Register a model profile for performance tracking.
     pub fn register_model(&self, profile: ModelProfile) -> Result<(), ModelRuntimeError> {
-        let mut guard = self.models.lock().expect("model manager lock poisoned");
+        let mut guard = self
+            .models
+            .lock()
+            .expect("ModelPerformanceManager lock poisoned during register_model");
         if guard.contains_key(&profile.model_id) {
             return Err(ModelRuntimeError::ModelAlreadyRegistered(
                 profile.model_id.clone(),
@@ -268,7 +271,10 @@ impl ModelPerformanceManager {
         model_id: &str,
         sample: PerformanceSample,
     ) -> Result<ModelOptimizationDecision, ModelRuntimeError> {
-        let mut guard = self.models.lock().expect("model manager lock poisoned");
+        let mut guard = self
+            .models
+            .lock()
+            .expect("ModelPerformanceManager lock poisoned during record_performance");
         let state = guard
             .get_mut(model_id)
             .ok_or_else(|| ModelRuntimeError::ModelNotFound(model_id.to_owned()))?;
@@ -280,7 +286,7 @@ impl ModelPerformanceManager {
             .tuning_policy
             .rules
             .iter()
-            .map(|rule| rule.evaluate(model_id, &sample))
+            .map(|rule| rule.evaluate_sample(model_id, &sample))
             .collect::<Result<Vec<_>, _>>()?;
         for adjustment in adjustments.into_iter().flatten() {
             Self::apply_adjustment(state, &adjustment);
@@ -288,7 +294,7 @@ impl ModelPerformanceManager {
             decision.adjustments.push(adjustment);
         }
 
-        if let Some(reload) = Self::evaluate_reload(state, &sample)? {
+        if let Some(reload) = Self::check_reload_policy(state, &sample)? {
             self.log_reload(state, &reload);
             decision.reload = Some(reload);
         }
@@ -298,7 +304,10 @@ impl ModelPerformanceManager {
 
     /// Retrieve a snapshot of a registered model profile.
     pub fn snapshot(&self, model_id: &str) -> Result<ModelProfile, ModelRuntimeError> {
-        let guard = self.models.lock().expect("model manager lock poisoned");
+        let guard = self
+            .models
+            .lock()
+            .expect("ModelPerformanceManager lock poisoned during snapshot");
         let state = guard
             .get(model_id)
             .ok_or_else(|| ModelRuntimeError::ModelNotFound(model_id.to_owned()))?;
@@ -311,7 +320,7 @@ impl ModelPerformanceManager {
         }
     }
 
-    fn evaluate_reload(
+    fn check_reload_policy(
         state: &mut ModelState,
         sample: &PerformanceSample,
     ) -> Result<Option<ModelReloadRequest>, ModelRuntimeError> {
@@ -504,7 +513,10 @@ impl InMemoryReplicaKernel {
 
 impl ReplicaKernel for InMemoryReplicaKernel {
     fn create_replica(&self, request: &ReplicaRequest) -> Result<ReplicaHandle, ReplicaKernelError> {
-        let mut guard = self.replicas.lock().expect("replica kernel lock poisoned");
+        let mut guard = self
+            .replicas
+            .lock()
+            .expect("InMemoryReplicaKernel lock poisoned during create_replica");
         if guard.len() as u32 >= self.max_replicas {
             return Err(ReplicaKernelError::LimitReached(self.max_replicas));
         }
@@ -519,7 +531,10 @@ impl ReplicaKernel for InMemoryReplicaKernel {
     }
 
     fn destroy_replica(&self, id: ReplicaId) -> Result<(), ReplicaKernelError> {
-        let mut guard = self.replicas.lock().expect("replica kernel lock poisoned");
+        let mut guard = self
+            .replicas
+            .lock()
+            .expect("InMemoryReplicaKernel lock poisoned during destroy_replica");
         if guard.remove(&id).is_some() {
             Ok(())
         } else {
@@ -629,7 +644,12 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
 
     /// Register a module for replica planning.
     pub fn register_module(&self, module: ModelModule) {
-        let mut guard = self.modules.lock().expect("replica pool lock poisoned");
+        let mut guard = self
+            .modules
+            .lock()
+            .expect("ModelReplicaPool modules lock poisoned during register_module");
+        let mut module = module;
+        module.max_replicas = module.max_replicas.max(1);
         guard.insert(module.module_id.clone(), module);
     }
 
@@ -638,7 +658,7 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
         &self,
         demand: ReplicaDemand,
     ) -> Result<ReplicaProvisioningResult, ModelReplicaError> {
-        let plan = self.plan_modules(&demand)?;
+        let plan = self.build_ensemble_plan(&demand)?;
         let mut replicas = Vec::new();
         for selection in &plan.modules {
             for _ in 0..selection.replicas {
@@ -652,7 +672,7 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
                 let handle = self.kernel.create_replica(&request)?;
                 self.replicas
                     .lock()
-                    .expect("replica pool lock poisoned")
+                    .expect("ModelReplicaPool replicas lock poisoned during provision")
                     .insert(handle.id, handle.clone());
                 self.log_replica_provisioned(&demand, &handle, selection);
                 replicas.push(handle);
@@ -664,7 +684,10 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
     /// Release a replica by identifier.
     pub fn release(&self, id: ReplicaId) -> Result<(), ModelReplicaError> {
         let handle = {
-            let mut guard = self.replicas.lock().expect("replica pool lock poisoned");
+            let mut guard = self
+                .replicas
+                .lock()
+                .expect("ModelReplicaPool replicas lock poisoned during release");
             guard.remove(&id)
         };
         if let Some(handle) = handle {
@@ -674,8 +697,14 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
         Ok(())
     }
 
-    fn plan_modules(&self, demand: &ReplicaDemand) -> Result<ModelEnsemblePlan, ModelReplicaError> {
-        let modules = self.modules.lock().expect("replica pool lock poisoned");
+    fn build_ensemble_plan(
+        &self,
+        demand: &ReplicaDemand,
+    ) -> Result<ModelEnsemblePlan, ModelReplicaError> {
+        let modules = self
+            .modules
+            .lock()
+            .expect("ModelReplicaPool modules lock poisoned during build_ensemble_plan");
         if modules.is_empty() {
             return Err(ModelReplicaError::NoModulesAvailable);
         }
@@ -736,7 +765,7 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
             if index == 0 && remaining > base_count {
                 replicas += remaining - base_count;
             }
-            replicas = replicas.max(1).min(module.max_replicas.max(1));
+            replicas = replicas.max(1).min(module.max_replicas);
             planned_modules.push(ModelModuleSelection {
                 module_id: module.module_id.clone(),
                 kind: module.kind,
