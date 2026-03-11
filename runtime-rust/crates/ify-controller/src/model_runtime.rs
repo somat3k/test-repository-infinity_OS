@@ -643,12 +643,11 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
     }
 
     /// Register a module for replica planning.
-    pub fn register_module(&self, module: ModelModule) {
+    pub fn register_module(&self, mut module: ModelModule) {
         let mut guard = self
             .modules
             .lock()
             .expect("ModelReplicaPool modules lock poisoned during register_module");
-        let mut module = module;
         module.max_replicas = module.max_replicas.max(1);
         guard.insert(module.module_id.clone(), module);
     }
@@ -744,10 +743,7 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
             }
             if let (Some((ml, ml_score)), Some((ai, ai_score))) = (best_ml, best_ai) {
                 selections.push((ml.clone(), ml_score));
-                if ml.module_id != ai.module_id {
-                    // Ensure the ensemble spans distinct modules when possible.
-                    selections.push((ai.clone(), ai_score));
-                }
+                selections.push((ai.clone(), ai_score));
             } else if let Some((module, score)) = scored.first() {
                 selections.push((module.clone(), *score));
             }
