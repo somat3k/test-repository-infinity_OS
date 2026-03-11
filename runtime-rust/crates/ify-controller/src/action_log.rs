@@ -168,6 +168,24 @@ pub enum EventType {
     NodeMessageSent,
     /// A message was broadcast from a node to all listeners.
     NodeMessageBroadcast,
+
+    // --- Epic J: Job Scheduling events ---
+    /// A task lease was renewed by a worker heartbeat.
+    TaskLeaseRenewed,
+    /// A task was paused (e.g., preemption).
+    TaskPaused,
+    /// A paused task was resumed.
+    TaskResumed,
+
+    // --- Epic N: Node Instance Grouping events ---
+    /// An instance template was created.
+    TemplateCreated,
+    /// An instance template was cloned.
+    TemplateCloned,
+    /// An instance template was forked.
+    TemplateForked,
+    /// A node instance was expanded from a template.
+    InstanceCreated,
 }
 
 impl EventType {
@@ -224,6 +242,13 @@ impl EventType {
             Self::NodeRelationRemoved => "node_relation.removed",
             Self::NodeMessageSent => "node_message.sent",
             Self::NodeMessageBroadcast => "node_message.broadcast",
+            Self::TaskLeaseRenewed => "task.lease_renewed",
+            Self::TaskPaused => "task.paused",
+            Self::TaskResumed => "task.resumed",
+            Self::TemplateCreated => "template.created",
+            Self::TemplateCloned => "template.cloned",
+            Self::TemplateForked => "template.forked",
+            Self::InstanceCreated => "instance.created",
         }
     }
 }

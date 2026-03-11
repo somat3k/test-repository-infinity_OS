@@ -116,16 +116,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md`](docs/architecture/epic-i-implementation.md)
 
 ## J. Job Scheduling and Task Lifecycle
-- [ ] Define task states (queued/running/paused/failed/completed).
-- [ ] Implement priority-aware scheduling.
-- [ ] Add retries, backoff, and cancellation semantics.
-- [ ] Implement task leasing/heartbeats for distributed workers.
-- [ ] Implement per-dimension quotas and rate limiting.
-- [ ] Add dependency-aware scheduling (DAG-based).
-- [ ] Implement task preemption policy.
-- [ ] Add task persistence + recovery after crash/restart.
-- [ ] Add task templates (for repeated workflows).
-- [ ] Add unique TaskID enforcement + index across dimensions.
+- [x] Define task states (queued/running/paused/failed/completed). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Implement priority-aware scheduling. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add retries, backoff, and cancellation semantics. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Implement task leasing/heartbeats for distributed workers. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Implement per-dimension quotas and rate limiting. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add dependency-aware scheduling (DAG-based). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Implement task preemption policy. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add task persistence + recovery after crash/restart. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add task templates (for repeated workflows). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
+- [x] Add unique TaskID enforcement + index across dimensions. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/scheduler.rs
 
 ## K. Kaizen Reliability Loop
 - [ ] Define weekly reliability review cadence.
@@ -164,15 +164,15 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [ ] Add mesh replication between runtime instances.
 
 ## N. Node Instance Grouping
-- [ ] Implement instance templates from grouped nodes.
-- [ ] Add clone/fork mechanics with provenance tracking.
-- [ ] Support instance-level configuration overrides.
-- [ ] Add parameter inheritance rules.
-- [ ] Add template versioning + migration.
-- [ ] Add sharing/export of templates.
-- [ ] Add locking policy (read-only templates vs editable).
-- [ ] Add marketplace publishing hooks.
-- [ ] Add test coverage for template expansion determinism.
+- [x] Implement instance templates from grouped nodes. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add clone/fork mechanics with provenance tracking. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Support instance-level configuration overrides. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add parameter inheritance rules. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add template versioning + migration. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add sharing/export of templates. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add locking policy (read-only templates vs editable). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add marketplace publishing hooks. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
+- [x] Add test coverage for template expansion determinism. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
 - [ ] Add UI for managing templates in project window.
 
 ## O. Operational Security
