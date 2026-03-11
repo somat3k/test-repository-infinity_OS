@@ -22,7 +22,8 @@ The agents layer owns built-in agent template definitions, execution policies, m
 ## Built-in Templates
 
 - [Performance Optimization Agent](performance-optimization-agent.md)
+- [Security Agent](security-agent.md)
 
 ## Epic Tracking
 
-See [EPIC S — Snippet and Agent Marketplace Foundations](../TODO.md) in `TODO.md`.
+See [EPIC O — Operational Security](../TODO.md) and [EPIC S — Snippet and Agent Marketplace Foundations](../TODO.md) in `TODO.md`.

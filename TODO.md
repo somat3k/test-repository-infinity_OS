@@ -173,19 +173,19 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add locking policy (read-only templates vs editable). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
 - [x] Add marketplace publishing hooks. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
 - [x] Add test coverage for template expansion determinism. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
-- [ ] Add UI for managing templates in project window.
+- [x] Add UI for managing templates in project window. (Owner: copilot, 2026-03-11) → AGENTS.md (Project Window template manager)
 
 ## O. Operational Security
-- [ ] Threat-model desktop-to-canvas execution path.
-- [ ] Add input validation at all boundary layers.
-- [ ] Add audit trail for privileged actions.
-- [ ] Implement identity-first access controls (users/agents/tools).
-- [ ] Add signed artifacts for runtime/deploy paths.
-- [ ] Implement sandboxed tool execution (network/fs/model boundaries).
-- [ ] Add secret management and redaction.
-- [ ] Add supply chain protections (SBOM, signature verification).
-- [ ] Add policy engine for allow/deny decisions.
-- [ ] Add security hardening checklist before GA.
+- [ ] Threat-model desktop-to-canvas execution path. (Owner: security-agent, 2026-03-11)
+- [ ] Add input validation at all boundary layers. (Owner: security-agent, 2026-03-11)
+- [ ] Add audit trail for privileged actions. (Owner: security-agent, 2026-03-11)
+- [ ] Implement identity-first access controls (users/agents/tools). (Owner: security-agent, 2026-03-11)
+- [ ] Add signed artifacts for runtime/deploy paths. (Owner: security-agent, 2026-03-11)
+- [ ] Implement sandboxed tool execution (network/fs/model boundaries). (Owner: security-agent, 2026-03-11)
+- [ ] Add secret management and redaction. (Owner: security-agent, 2026-03-11)
+- [ ] Add supply chain protections (SBOM, signature verification). (Owner: security-agent, 2026-03-11)
+- [ ] Add policy engine for allow/deny decisions. (Owner: security-agent, 2026-03-11)
+- [ ] Add security hardening checklist before GA. (Owner: security-agent, 2026-03-11)
 
 ## P. Processing and Transformation Pipelines
 - [ ] Build pipeline primitives (map/filter/reduce/aggregate/window).

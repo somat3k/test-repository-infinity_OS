@@ -153,6 +153,20 @@ Must guarantee:
 - human-auditable execution plans.
 - governance policy compliance (capability tiers, audits, release gates) per docs/governance/.
 
+### 2.7 Security Agent
+Owns:
+- threat modeling for desktop-to-canvas execution and tool boundaries,
+- boundary-layer input validation requirements and sanitizer policies,
+- audit trail coverage for privileged actions,
+- identity-first access controls for users, agents, and tools,
+- artifact signing, SBOM, and supply-chain guardrails,
+- sandbox policy definitions for tool execution and secret redaction.
+
+Must guarantee:
+- security decisions are recorded in ActionLog with TaskID + correlation IDs,
+- least-privilege capability templates and approval workflows for privileged actions,
+- pre-release security hardening reviews aligned with docs/governance/ policies.
+
 ## 3) Core Concepts (What)
 
 ### 3.1 Dimensions
@@ -189,7 +203,7 @@ Must guarantee:
 
 ### 4.2 Project Window (10)
 1. Dimension selector + project metadata.
-2. Graph/template browser (instances, subgraphs).
+2. Graph/template browser (instances, subgraphs, template manager).
 3. Dataset/model registry views.
 4. Library/package manager view.
 5. Deployment targets and environments.
