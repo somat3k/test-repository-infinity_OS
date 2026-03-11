@@ -404,7 +404,8 @@ impl InstructionDataset {
         }
     }
 
-    fn source(&self, id: Uuid) -> Option<&InstructionSource> {
+    /// Look up a source by ID.
+    pub fn source(&self, id: Uuid) -> Option<&InstructionSource> {
         self.sources.iter().find(|source| source.id == id)
     }
 }
