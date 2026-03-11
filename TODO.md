@@ -113,6 +113,7 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [ ] Add collaborative cursors and edit conflict resolution (optional).
 - [ ] Integrate seamless node adder/customizer from editor.
 - [ ] Implement canvas performance budgets (FPS + large graph handling).
+Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md`](docs/architecture/epic-i-implementation.md)
 
 ## J. Job Scheduling and Task Lifecycle
 - [ ] Define task states (queued/running/paused/failed/completed).

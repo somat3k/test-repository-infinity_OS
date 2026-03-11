@@ -21,4 +21,4 @@ The canvas layer owns the infinity zoom canvas UX contracts, the node/link/group
 
 ## Epic Tracking
 
-See [EPIC F — Flow Graph and Node Connectivity](../TODO.md) and [EPIC I — Infinity Zoom Canvas UX Contracts](../TODO.md) in `TODO.md`.
+See [EPIC F — Flow Graph and Node Connectivity](../TODO.md) and [EPIC I — Infinity Zoom Canvas UX Contracts](../TODO.md) in `TODO.md`. Implementation details and highlights for Epic I live in [`docs/architecture/epic-i-implementation.md`](../docs/architecture/epic-i-implementation.md).
