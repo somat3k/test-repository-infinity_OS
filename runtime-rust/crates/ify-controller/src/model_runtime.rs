@@ -567,9 +567,9 @@ pub struct ReplicaDemand {
     pub task_id: TaskId,
     /// Target model identifier.
     pub model_id: String,
-    /// Complexity score (0.0–1.0).
+    /// Complexity score (0.0–1.0). Values outside this range are clamped.
     pub complexity: f64,
-    /// Efficiency target (0.0–1.0).
+    /// Efficiency target (0.0–1.0). Values outside this range are clamped.
     pub efficiency_target: f64,
     /// Maximum replicas to provision.
     pub max_replicas: u32,
@@ -643,6 +643,8 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
     }
 
     /// Register a module for replica planning.
+    ///
+    /// `max_replicas` is clamped to at least 1 when stored.
     pub fn register_module(&self, mut module: ModelModule) {
         let mut guard = self
             .modules
