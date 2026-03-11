@@ -4,6 +4,7 @@
 //! loop bounds.  Decisions can be driven by runtime metrics or ML model scores.
 //! Each evaluation emits ActionLog events to maintain the audit trail.
 
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -202,7 +203,7 @@ pub struct FlowStep {
     pub transitions: Vec<FlowTransition>,
     /// Fallback step when no transition matches.
     pub fallback: Option<Uuid>,
-    /// Optional maximum number of visits to this step.
+    /// Optional maximum number of visits to this step before fallback.
     pub max_visits: Option<u32>,
     /// Optional canvas attachment metadata (snippet, terminal, visuals).
     pub canvas_attachment: Option<CanvasAttachment>,
@@ -436,6 +437,17 @@ impl FlowVisualization {
     }
 }
 
+/// Comparison operator for quality gates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ComparisonOperator {
+    /// Metric must be greater than or equal to the threshold.
+    AtLeast,
+    /// Metric must be less than or equal to the threshold.
+    AtMost,
+    /// Metric must exactly match the threshold.
+    Equal,
+}
+
 /// Quality gate metadata for step-level checks.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QualityGate {
@@ -445,8 +457,8 @@ pub struct QualityGate {
     pub metric: String,
     /// Threshold value for the metric.
     pub threshold: f64,
-    /// Comparison operator (e.g., \"at_least\").
-    pub operator: String,
+    /// Comparison operator.
+    pub operator: ComparisonOperator,
 }
 
 impl QualityGate {
@@ -455,14 +467,33 @@ impl QualityGate {
         name: impl Into<String>,
         metric: impl Into<String>,
         threshold: f64,
-        operator: impl Into<String>,
+        operator: ComparisonOperator,
     ) -> Self {
         Self {
             name: name.into(),
             metric: metric.into(),
             threshold,
-            operator: operator.into(),
+            operator,
         }
+    }
+
+    /// Evaluate the quality gate against a concrete metric value.
+    pub fn evaluate(&self, value: f64) -> bool {
+        match self.operator {
+            ComparisonOperator::AtLeast => value >= self.threshold,
+            ComparisonOperator::AtMost => value <= self.threshold,
+            ComparisonOperator::Equal => (value - self.threshold).abs() <= f64::EPSILON,
+        }
+    }
+
+    /// Evaluate the quality gate against metrics in a flow context.
+    pub fn evaluate_with_context(&self, context: &FlowContext) -> Result<bool, FlowControlError> {
+        let value = context
+            .metrics
+            .get(&self.metric)
+            .copied()
+            .ok_or_else(|| FlowControlError::MissingMetric(self.metric.clone()))?;
+        Ok(self.evaluate(value))
     }
 }
 
@@ -700,7 +731,7 @@ pub struct ChatPayload {
 /// Implementations are expected to be safe for concurrent use.  Prefer
 /// stateless adapters, or ensure internal state is protected so the adapter can
 /// be shared across threads (e.g., behind an `Arc`).
-pub trait ChatAdapter {
+pub trait ChatAdapter: Send + Sync {
     /// Transform a request into an intent and parameter payload.
     fn adapt(
         &self,
@@ -821,7 +852,9 @@ where
                     source_id: instruction.source_id,
                 },
             )?;
-            sources.entry(source.id).or_insert_with(|| source.clone());
+            if let Entry::Vacant(entry) = sources.entry(source.id) {
+                entry.insert(source.clone());
+            }
         }
         Ok(sources.into_values().collect())
     }
@@ -836,7 +869,7 @@ where
 /// Scores are expected to be normalized (0.0–1.0).  Implementations should be
 /// safe for concurrent use and may internally cache model state or embeddings
 /// as long as scoring remains deterministic for the same input features.
-pub trait ModelEvaluator {
+pub trait ModelEvaluator: Send + Sync {
     /// Return a model score for the supplied feature payload.
     fn score(&self, model: &str, features: &serde_json::Value) -> Result<f64, FlowControlError>;
 }
@@ -912,6 +945,8 @@ where
             .ok_or(FlowControlError::StepNotFound(step_id))?;
 
         let visit_count = state.record_visit(step_id);
+        // `visit_count` includes the current visit; fallback triggers once the
+        // count exceeds the configured maximum.
         if let Some(limit) = step.max_visits {
             if visit_count > limit {
                 let fallback = step
@@ -1320,7 +1355,12 @@ mod tests {
             "Execution latency",
             serde_json::json!({ "type": "line" }),
         ));
-        attachment.add_quality_gate(QualityGate::new("latency", "latency_ms", 250.0, "at_most"));
+        attachment.add_quality_gate(QualityGate::new(
+            "latency",
+            "latency_ms",
+            250.0,
+            ComparisonOperator::AtMost,
+        ));
 
         let step = FlowStep::task("snippet", Uuid::new_v4()).with_canvas_attachment(attachment);
 
@@ -1328,5 +1368,16 @@ mod tests {
         assert!(canvas.snippet.is_some());
         assert_eq!(canvas.visualizations.len(), 1);
         assert_eq!(canvas.quality_gates.len(), 1);
+    }
+
+    #[test]
+    fn quality_gate_evaluates_against_context() {
+        let gate = QualityGate::new("latency", "latency_ms", 200.0, ComparisonOperator::AtMost);
+        let mut context = FlowContext::new(DimensionId::new(), TaskId::new());
+        context.metrics.insert("latency_ms".to_owned(), 180.0);
+        assert!(gate.evaluate_with_context(&context).unwrap());
+
+        context.metrics.insert("latency_ms".to_owned(), 240.0);
+        assert!(!gate.evaluate_with_context(&context).unwrap());
     }
 }

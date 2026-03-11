@@ -74,12 +74,40 @@ pub mod task_allocator;
 pub use action_log::{ActionLog, ActionLogEntry, Actor, EventType};
 pub use controller::{BlockController, BlockControllerError, ControllerState};
 pub use flow_control::{
-    CanvasAttachment, ChatAdaptation, ChatAdapter, ChatInstructionSelection, ChatPayload,
-    ChatPayloadBuilder, ChatRequest, ChatSkillModule, ChatTool, FlowAdvance, FlowCondition,
-    FlowContext, FlowControlEngine, FlowControlError, FlowGraph, FlowState, FlowStep,
-    FlowStepKind, FlowTerminalStatus, FlowTransition, FlowVisualization, InstructionDataset,
-    InstructionEntry, InstructionSource, ModelEvaluator, QualityGate, SnippetAttachment,
-    SnippetSandboxProfile, TerminalSession,
+    // Canvas attachments
+    CanvasAttachment,
+    // Chat payloads + instructions
+    ChatAdaptation,
+    ChatAdapter,
+    ChatInstructionSelection,
+    ChatPayload,
+    ChatPayloadBuilder,
+    ChatRequest,
+    ChatSkillModule,
+    ChatTool,
+    // Supporting types
+    ComparisonOperator,
+    // Flow graph + execution
+    FlowAdvance,
+    FlowCondition,
+    FlowContext,
+    FlowControlEngine,
+    FlowControlError,
+    FlowGraph,
+    FlowState,
+    FlowStep,
+    FlowStepKind,
+    FlowTerminalStatus,
+    FlowTransition,
+    FlowVisualization,
+    InstructionDataset,
+    InstructionEntry,
+    InstructionSource,
+    ModelEvaluator,
+    QualityGate,
+    SnippetAttachment,
+    SnippetSandboxProfile,
+    TerminalSession,
 };
 pub use mesh::{MeshArtifactBuilder, MeshArtifactStore};
 pub use node::{Node, NodeCustomizer, NodeGraph, NodeTemplate};
