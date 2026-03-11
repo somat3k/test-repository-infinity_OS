@@ -267,9 +267,9 @@ Must guarantee:
 3. Publish progress events + logs.
 4. Retry/backoff/cancel semantics.
 5. Idempotent action execution (replay safe).
-6. Produce artifacts to mesh with provenance.
-7. Subscribe nodes/agents to artifact updates.
-8. Persist task state for recovery.
+6. Produce artifacts to mesh with provenance + schema registry.
+7. Subscribe nodes/agents to artifact updates (filtered + replicated).
+8. Persist task state for recovery + mesh indexing/GC awareness.
 9. Emit telemetry spans correlated to TaskID.
 10. Generate evaluation summaries as artifacts.
 
