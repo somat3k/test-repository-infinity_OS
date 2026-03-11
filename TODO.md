@@ -176,16 +176,16 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Document UI for managing templates in project window. (Owner: copilot, 2026-03-11) → AGENTS.md (Project Window template manager)
 
 ## O. Operational Security
-- [ ] Threat-model desktop-to-canvas execution path. (Owner: security-agent, 2026-03-11)
-- [ ] Add input validation at all boundary layers. (Owner: security-agent, 2026-03-11)
-- [ ] Add audit trail for privileged actions. (Owner: security-agent, 2026-03-11)
-- [ ] Implement identity-first access controls (users/agents/tools). (Owner: security-agent, 2026-03-11)
-- [ ] Add signed artifacts for runtime/deploy paths. (Owner: security-agent, 2026-03-11)
-- [ ] Implement sandboxed tool execution (network/fs/model boundaries). (Owner: security-agent, 2026-03-11)
-- [ ] Add secret management and redaction. (Owner: security-agent, 2026-03-11)
-- [ ] Add supply chain protections (SBOM, signature verification). (Owner: security-agent, 2026-03-11)
-- [ ] Add policy engine for allow/deny decisions. (Owner: security-agent, 2026-03-11)
-- [ ] Add security hardening checklist before GA. (Owner: security-agent, 2026-03-11)
+- [x] Threat-model desktop-to-canvas execution path. (Owner: security-agent, 2026-03-11)
+- [x] Add input validation at all boundary layers. (Owner: security-agent, 2026-03-11)
+- [x] Add audit trail for privileged actions. (Owner: security-agent, 2026-03-11)
+- [x] Implement identity-first access controls (users/agents/tools). (Owner: security-agent, 2026-03-11)
+- [x] Add signed artifacts for runtime/deploy paths. (Owner: security-agent, 2026-03-11)
+- [x] Implement sandboxed tool execution (network/fs/model boundaries). (Owner: security-agent, 2026-03-11)
+- [x] Add secret management and redaction. (Owner: security-agent, 2026-03-11)
+- [x] Add supply chain protections (SBOM, signature verification). (Owner: security-agent, 2026-03-11)
+- [x] Add policy engine for allow/deny decisions. (Owner: security-agent, 2026-03-11)
+- [x] Add security hardening checklist before GA. (Owner: security-agent, 2026-03-11)
 
 ## P. Processing and Transformation Pipelines
 - [ ] Build pipeline primitives (map/filter/reduce/aggregate/window).
