@@ -128,6 +128,64 @@ pub enum EventType {
     OrchestratorReplay,
     /// Progress event emitted by the orchestrator.
     OrchestratorProgress,
+
+    // --- Graph connectivity events (Epic F) ---
+    /// A directed link was added between two node ports.
+    LinkCreated,
+    /// A directed link was removed from the graph.
+    LinkRemoved,
+    /// A node group was created.
+    GroupCreated,
+    /// A node group was removed.
+    GroupRemoved,
+    /// A subgraph / macro was registered.
+    SubgraphCreated,
+    /// The graph passed or failed validation.
+    GraphValidated,
+    /// A diff/patch was applied to the flow graph.
+    GraphPatched,
+
+    // --- Node execution contract events (Epic F) ---
+    /// A node execution contract transitioned to Running.
+    NodeExecutionStarted,
+    /// A node execution contract emitted a progress update.
+    NodeExecutionProgress,
+    /// A node execution contract reached Complete.
+    NodeExecutionCompleted,
+    /// A node execution contract reached Failed.
+    NodeExecutionFailed,
+    /// A node execution contract was Cancelled.
+    NodeExecutionCancelled,
+
+    // --- Node relation events (Epic F / node communication) ---
+    /// A semantic relation was created between two nodes.
+    NodeRelationCreated,
+    /// A semantic relation between two nodes was removed.
+    NodeRelationRemoved,
+
+    // --- Node communication / messaging events ---
+    /// A message was sent from one node to another.
+    NodeMessageSent,
+    /// A message was broadcast from a node to all listeners.
+    NodeMessageBroadcast,
+
+    // --- Epic J: Job Scheduling events ---
+    /// A task lease was renewed by a worker heartbeat.
+    TaskLeaseRenewed,
+    /// A task was paused (e.g., preemption).
+    TaskPaused,
+    /// A paused task was resumed.
+    TaskResumed,
+
+    // --- Epic N: Node Instance Grouping events ---
+    /// An instance template was created.
+    TemplateCreated,
+    /// An instance template was cloned.
+    TemplateCloned,
+    /// An instance template was forked.
+    TemplateForked,
+    /// A node instance was expanded from a template.
+    InstanceCreated,
 }
 
 impl EventType {
@@ -168,6 +226,29 @@ impl EventType {
             Self::OrchestratorCancel => "orchestrator.cancel",
             Self::OrchestratorReplay => "orchestrator.replay",
             Self::OrchestratorProgress => "orchestrator.progress",
+            Self::LinkCreated => "link.created",
+            Self::LinkRemoved => "link.removed",
+            Self::GroupCreated => "group.created",
+            Self::GroupRemoved => "group.removed",
+            Self::SubgraphCreated => "subgraph.created",
+            Self::GraphValidated => "graph.validated",
+            Self::GraphPatched => "graph.patched",
+            Self::NodeExecutionStarted => "node_execution.started",
+            Self::NodeExecutionProgress => "node_execution.progress",
+            Self::NodeExecutionCompleted => "node_execution.completed",
+            Self::NodeExecutionFailed => "node_execution.failed",
+            Self::NodeExecutionCancelled => "node_execution.cancelled",
+            Self::NodeRelationCreated => "node_relation.created",
+            Self::NodeRelationRemoved => "node_relation.removed",
+            Self::NodeMessageSent => "node_message.sent",
+            Self::NodeMessageBroadcast => "node_message.broadcast",
+            Self::TaskLeaseRenewed => "task.lease_renewed",
+            Self::TaskPaused => "task.paused",
+            Self::TaskResumed => "task.resumed",
+            Self::TemplateCreated => "template.created",
+            Self::TemplateCloned => "template.cloned",
+            Self::TemplateForked => "template.forked",
+            Self::InstanceCreated => "instance.created",
         }
     }
 }

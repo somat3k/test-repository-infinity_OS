@@ -62,13 +62,18 @@
 #![warn(missing_docs, clippy::all)]
 
 pub mod action_log;
+pub mod connectors;
 pub mod controller;
 pub mod flow_control;
+pub mod graph;
+pub mod graph_query;
 pub mod mesh;
 pub mod model_runtime;
 pub mod node;
+pub mod node_instance;
 pub mod orchestrator;
 pub mod registry;
+pub mod scheduler;
 pub mod task_allocator;
 
 // Re-export the most commonly used types at the crate root for ergonomics.
@@ -143,3 +148,64 @@ pub use node::{Node, NodeCustomizer, NodeGraph, NodeTemplate};
 pub use orchestrator::{LocalOrchestrator, OrchestratorEvent};
 pub use registry::{BlockRegistry, RuntimeBinding};
 pub use task_allocator::TaskAllocator;
+
+// Epic F — Flow Graph and Node Connectivity
+pub use connectors::{ConnectorKind, ConnectorParam, ConnectorRegistry, ConnectorTemplate};
+pub use graph::{
+    FlowGraph as FlowGraphRuntime,
+    FlowGraphError,
+    FlowGraphSchema,
+    GRAPH_SCHEMA_VERSION,
+    GraphNode,
+    GraphPatch,
+    GraphPatchOp,
+    Group,
+    Link,
+    NodeExecutionContract,
+    NodeExecutionState,
+    NodeProvenance,
+    NodeRelation,
+    PortDataType,
+    PortDef,
+    PortDirection,
+    RelationKind,
+    Subgraph,
+    ValidationIssue,
+    ValidationReport,
+};
+// Epic F — Node Communication and Data Sampling
+pub use graph_query::{
+    NodeCommunicator,
+    NodeCondition,
+    NodeMessage,
+    NodeSample,
+    NodeSelector,
+};
+// Epic J — Job Scheduling and Task Lifecycle
+pub use scheduler::{
+    DimensionQuota,
+    PreemptionPolicy,
+    RetryPolicy,
+    SchedulerError,
+    TaskLease,
+    TaskPriority,
+    TaskRecord,
+    TaskScheduler,
+    TaskSpec,
+    TaskState,
+    TaskTemplate,
+};
+// Epic N — Node Instance Grouping
+pub use node_instance::{
+    InstanceConfig,
+    InstanceError,
+    InstanceRegistry,
+    InstanceTemplate,
+    LockPolicy,
+    NodeInstance,
+    ParamInheritance,
+    ParamSchema,
+    PublishReceipt,
+    PublishRequest,
+    TemplateProvenance,
+};
