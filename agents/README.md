@@ -19,6 +19,10 @@ The agents layer owns built-in agent template definitions, execution policies, m
 - **Signed packages**: all marketplace submissions require signing before publish.
 - **Least-privilege default**: agents request only the capabilities they declare; no ambient authority.
 
+## Built-in Templates
+
+- [Performance Optimization Agent](performance-optimization-agent.md)
+
 ## Epic Tracking
 
 See [EPIC S — Snippet and Agent Marketplace Foundations](../TODO.md) in `TODO.md`.

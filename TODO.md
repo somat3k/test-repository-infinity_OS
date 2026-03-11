@@ -91,16 +91,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 ## H. Hyperperformance Optimization
 - [x] Add performance-driven hyperparameter tuning with quick reload triggers.
 - [x] Add kernel-style replica pooling for multi-model (ML + AI) execution stacks.
-- [ ] Set baseline performance budgets (latency/throughput/memory) per subsystem.
-- [ ] Add profiling hooks to critical execution paths.
-- [ ] Implement benchmark suite for kernel/runtime/canvas/graph.
-- [ ] Add load testing for mesh artifact updates and node batching.
-- [ ] Optimize scheduler hot paths (lock contention, queue ops).
-- [ ] Optimize serialization/deserialization (zero-copy where feasible).
-- [ ] Add caching strategy (artifact cache, node results cache).
-- [ ] Add adaptive batching policies (backpressure-aware).
-- [ ] Document optimization loops and measurable gains.
-- [ ] Add regression guardrails (perf CI thresholds).
+- [x] Set baseline performance budgets (latency/throughput/memory) per subsystem. (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
+- [x] Add profiling hooks to critical execution paths. (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
+- [x] Implement benchmark suite for kernel/runtime/canvas/graph. (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
+- [x] Add load testing for mesh artifact updates and node batching. (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md, agents/performance-optimization-agent.md
+- [x] Optimize scheduler hot paths (lock contention, queue ops). (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
+- [x] Optimize serialization/deserialization (zero-copy where feasible). (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
+- [x] Add caching strategy (artifact cache, node results cache). (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
+- [x] Add adaptive batching policies (backpressure-aware). (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
+- [x] Document optimization loops and measurable gains. (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md, agents/performance-optimization-agent.md
+- [x] Add regression guardrails (perf CI thresholds). (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md, agents/performance-optimization-agent.md
 
 ## I. Infinity Zoom Canvas UX Contracts
 - [ ] Define zoom-level interaction contracts and limits.
