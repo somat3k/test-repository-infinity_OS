@@ -275,13 +275,17 @@ impl ModelPerformanceManager {
         state.sample_count += 1;
 
         let mut decision = ModelOptimizationDecision::default();
-        let rules = state.profile.tuning_policy.rules.clone();
-        for rule in rules {
-            if let Some(adjustment) = rule.evaluate(model_id, &sample)? {
-                Self::apply_adjustment(state, &adjustment);
-                self.log_hyperparameter_adjustment(state, &adjustment);
-                decision.adjustments.push(adjustment);
-            }
+        let adjustments = state
+            .profile
+            .tuning_policy
+            .rules
+            .iter()
+            .map(|rule| rule.evaluate(model_id, &sample))
+            .collect::<Result<Vec<_>, _>>()?;
+        for adjustment in adjustments.into_iter().flatten() {
+            Self::apply_adjustment(state, &adjustment);
+            self.log_hyperparameter_adjustment(state, &adjustment);
+            decision.adjustments.push(adjustment);
         }
 
         if let Some(reload) = Self::evaluate_reload(state, &sample)? {
@@ -712,6 +716,7 @@ impl<K: ReplicaKernel> ModelReplicaPool<K> {
             if let (Some((ml, ml_score)), Some((ai, ai_score))) = (best_ml, best_ai) {
                 selections.push((ml.clone(), ml_score));
                 if ml.module_id != ai.module_id {
+                    // Ensure the ensemble spans distinct modules when possible.
                     selections.push((ai.clone(), ai_score));
                 }
             } else if let Some((module, score)) = scored.first() {
@@ -816,7 +821,7 @@ fn compare_metric(value: f64, operator: ComparisonOperator, threshold: f64) -> b
 
 fn desired_replica_count(max_replicas: u32, complexity: f64, base_count: u32) -> u32 {
     // Scale replicas linearly with complexity while guaranteeing at least one
-    // replica per selected module.  This keeps the pool responsive for
+    // replica per selected module. This keeps the pool responsive for
     // low-complexity tasks while allowing additional capacity when needed.
     let scaled = ((max_replicas as f64) * complexity).ceil() as u32;
     scaled.max(base_count).max(1)
