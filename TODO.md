@@ -89,8 +89,8 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Define incident response process for agent/tool compromise. (Owner: copilot, 2026-03-11) → [docs/governance/incident-response.md](docs/governance/incident-response.md)
 
 ## H. Hyperperformance Optimization
-- [x] Add performance-driven hyperparameter tuning with quick reload triggers.
-- [x] Add kernel-style replica pooling for multi-model (ML + AI) execution stacks.
+- [x] Add performance-driven hyperparameter tuning with quick reload triggers. (Owner: copilot, 2026-03-11)
+- [x] Add kernel-style replica pooling for multi-model (ML + AI) execution stacks. (Owner: copilot, 2026-03-11)
 - [x] Set baseline performance budgets (latency/throughput/memory) per subsystem. (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
 - [x] Add profiling hooks to critical execution paths. (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
 - [x] Implement benchmark suite for kernel/runtime/canvas/graph. (Owner: copilot, 2026-03-11) → docs/performance/hyperperformance-optimization.md
@@ -152,16 +152,16 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add reference implementations for key interfaces. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/interfaces.rs
 
 ## M. Mesh Data Canvas
-- [ ] Implement mesh data representation and routing.
-- [ ] Add high-volume node update batching.
-- [ ] Validate consistency under concurrent edits.
-- [ ] Define mesh artifact schema registry + versions.
-- [ ] Implement mesh subscriptions (watch nodes/artifacts) with filters.
-- [ ] Add conflict resolution strategy (OT/CRDT or patch merge).
-- [ ] Add provenance stamping for each mesh write.
-- [ ] Implement artifact indexing (search by tags, TaskID, node, agent).
-- [ ] Add garbage collection for orphaned artifacts.
-- [ ] Add mesh replication between runtime instances.
+- [ ] Implement mesh data representation and routing. (Owner: copilot, 2026-03-11)
+- [ ] Add high-volume node update batching. (Owner: copilot, 2026-03-11)
+- [ ] Validate consistency under concurrent edits. (Owner: copilot, 2026-03-11)
+- [ ] Define mesh artifact schema registry + versions. (Owner: copilot, 2026-03-11)
+- [ ] Implement mesh subscriptions (watch nodes/artifacts) with filters. (Owner: copilot, 2026-03-11)
+- [ ] Add conflict resolution strategy (OT/CRDT or patch merge). (Owner: copilot, 2026-03-11)
+- [ ] Add provenance stamping for each mesh write. (Owner: copilot, 2026-03-11)
+- [ ] Implement artifact indexing (search by tags, TaskID, node, agent). (Owner: copilot, 2026-03-11)
+- [ ] Add garbage collection for orphaned artifacts. (Owner: copilot, 2026-03-11)
+- [ ] Add mesh replication between runtime instances. (Owner: copilot, 2026-03-11)
 
 ## N. Node Instance Grouping
 - [x] Implement instance templates from grouped nodes. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
@@ -173,19 +173,19 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add locking policy (read-only templates vs editable). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
 - [x] Add marketplace publishing hooks. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
 - [x] Add test coverage for template expansion determinism. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/node_instance.rs
-- [ ] Add UI for managing templates in project window.
+- [x] Document UI for managing templates in project window. (Owner: copilot, 2026-03-11) → AGENTS.md (Project Window template manager)
 
 ## O. Operational Security
-- [ ] Threat-model desktop-to-canvas execution path.
-- [ ] Add input validation at all boundary layers.
-- [ ] Add audit trail for privileged actions.
-- [ ] Implement identity-first access controls (users/agents/tools).
-- [ ] Add signed artifacts for runtime/deploy paths.
-- [ ] Implement sandboxed tool execution (network/fs/model boundaries).
-- [ ] Add secret management and redaction.
-- [ ] Add supply chain protections (SBOM, signature verification).
-- [ ] Add policy engine for allow/deny decisions.
-- [ ] Add security hardening checklist before GA.
+- [ ] Threat-model desktop-to-canvas execution path. (Owner: security-agent, 2026-03-11)
+- [ ] Add input validation at all boundary layers. (Owner: security-agent, 2026-03-11)
+- [ ] Add audit trail for privileged actions. (Owner: security-agent, 2026-03-11)
+- [ ] Implement identity-first access controls (users/agents/tools). (Owner: security-agent, 2026-03-11)
+- [ ] Add signed artifacts for runtime/deploy paths. (Owner: security-agent, 2026-03-11)
+- [ ] Implement sandboxed tool execution (network/fs/model boundaries). (Owner: security-agent, 2026-03-11)
+- [ ] Add secret management and redaction. (Owner: security-agent, 2026-03-11)
+- [ ] Add supply chain protections (SBOM, signature verification). (Owner: security-agent, 2026-03-11)
+- [ ] Add policy engine for allow/deny decisions. (Owner: security-agent, 2026-03-11)
+- [ ] Add security hardening checklist before GA. (Owner: security-agent, 2026-03-11)
 
 ## P. Processing and Transformation Pipelines
 - [ ] Build pipeline primitives (map/filter/reduce/aggregate/window).
