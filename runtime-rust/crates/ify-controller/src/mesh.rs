@@ -749,6 +749,15 @@ impl MeshReplicator {
             match notification.kind {
                 MeshNotificationKind::Snapshot => self.replicate_snapshot(*id)?,
                 MeshNotificationKind::Patch => self.replicate_patch(*id)?,
+                MeshNotificationKind::Replicated => {
+                    if self.source.get_snapshot(*id).is_ok() {
+                        self.replicate_snapshot(*id)?
+                    } else if self.source.get_patch(*id).is_ok() {
+                        self.replicate_patch(*id)?
+                    } else {
+                        self.replicate_artifact(*id)?
+                    }
+                }
                 _ => self.replicate_artifact(*id)?,
             };
             replicated += 1;
@@ -793,9 +802,9 @@ impl MeshArtifactStore {
         let (tx, _) = broadcast::channel(channel_capacity.max(1));
         let (notification_tx, _) = broadcast::channel(channel_capacity.max(1));
         let mut registry = MeshSchemaRegistry::default();
-        registry
-            .register_schema("application/json", "1.0.0", "Default JSON schema")
-            .expect("default mesh schema registration failed");
+        if let Err(err) = registry.register_schema("application/json", "1.0.0", "Default JSON schema") {
+            warn!(error = %err, "default mesh schema registration failed");
+        }
         Arc::new(Self {
             artifacts: Mutex::new(HashMap::new()),
             snapshots: Mutex::new(HashMap::new()),
@@ -820,29 +829,31 @@ impl MeshArtifactStore {
         version: &str,
         description: impl Into<String>,
     ) -> Result<SchemaDefinition, MeshError> {
-        self.schema_registry
+        let mut registry = self
+            .schema_registry
             .lock()
-            .expect("mesh schema registry lock poisoned")
-            .register_schema(content_type, version, description)
+            .unwrap_or_else(|e| e.into_inner());
+        registry.register_schema(content_type, version, description)
     }
 
     /// Validate a schema version against the registry.
     pub fn validate_schema(&self, content_type: &str, version: &str) -> Result<(), MeshError> {
         let parsed = SchemaVersion::parse(version)?;
-        self.schema_registry
+        let registry = self
+            .schema_registry
             .lock()
-            .expect("mesh schema registry lock poisoned")
-            .validate(content_type, &parsed)
+            .unwrap_or_else(|e| e.into_inner());
+        registry.validate(content_type, &parsed)
     }
 
     /// Return a registered schema definition if it exists.
     pub fn schema_definition(&self, content_type: &str, version: &str) -> Option<SchemaDefinition> {
         let parsed = SchemaVersion::parse(version).ok()?;
-        self.schema_registry
+        let registry = self
+            .schema_registry
             .lock()
-            .expect("mesh schema registry lock poisoned")
-            .schema(content_type, &parsed)
-            .cloned()
+            .unwrap_or_else(|e| e.into_inner());
+        registry.schema(content_type, &parsed).cloned()
     }
 
     // ------------------------------------------------------------------
@@ -902,6 +913,9 @@ impl MeshArtifactStore {
         {
             let mut arts = self.artifacts.lock().expect("mesh lock poisoned");
             let mut index = self.index.lock().expect("mesh index lock poisoned");
+            if let Some(old) = arts.get(&id) {
+                index.remove(old);
+            }
             index.insert(&artifact);
             arts.insert(id, artifact);
         }
@@ -977,6 +991,9 @@ impl MeshArtifactStore {
                 artifact.consumed = false;
                 let id = artifact.id;
                 ids.push(id);
+                if let Some(old) = arts.get(&id) {
+                    index.remove(old);
+                }
                 index.insert(&artifact);
                 arts.insert(id, artifact);
             }
@@ -1167,32 +1184,41 @@ impl MeshArtifactStore {
         task_id: TaskId,
         dimension_id: DimensionId,
     ) -> ArtifactId {
-        let before_fallback = before.clone();
-        let after_fallback = after.clone();
-        let ops_fallback = ops.clone();
-        match self.patch_with_revision(PatchRequest {
+        let artifact_id = ArtifactId::new();
+        let (base_revision, new_revision, conflict) = self
+            .advance_revision(
+                node_id,
+                self.current_revision(node_id),
+                ConflictStrategy::LastWriteWins,
+                Some(artifact_id),
+            )
+            .unwrap_or_else(|err| {
+                warn!(error = %err, "mesh patch revision advance failed");
+                let current = self.current_revision(node_id);
+                (current, current.saturating_add(1), true)
+            });
+        let patch = DiffPatch {
+            artifact_id,
+            dimension_id,
+            task_id,
             node_id,
+            provenance: ArtifactProvenance {
+                producing_task_id: task_id,
+                producing_agent_id: None,
+                producing_node_id: Some(node_id),
+                controller_id: None,
+                schema_version: "1.0.0".to_owned(),
+            },
+            created_at_ms: now_ms(),
+            base_revision,
+            new_revision,
+            conflict,
             before,
             after,
             ops,
-            task_id,
-            dimension_id,
-            expected_revision: self.current_revision(node_id),
-            strategy: ConflictStrategy::LastWriteWins,
-        }) {
-            Ok(result) => result.artifact_id,
-            Err(err) => {
-                warn!(error = %err, "mesh patch fell back to force apply");
-                self.force_patch(
-                    node_id,
-                    before_fallback,
-                    after_fallback,
-                    ops_fallback,
-                    task_id,
-                    dimension_id,
-                )
-            }
-        }
+        };
+        self.store_patch(patch);
+        artifact_id
     }
 
     /// Record a diff/patch with revision validation.

@@ -156,6 +156,7 @@ pub use mesh::{
     MeshReplicator,
     MeshSubscription,
     PatchApplyResult,
+    PatchRequest,
     SchemaDefinition,
     SchemaVersion,
     SubscriptionFilter,
