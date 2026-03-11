@@ -18,6 +18,7 @@
 //! | [`mesh`] | Mesh-artifact write path (produce, consume, snapshot, diff/patch) |
 //! | [`node`] | Seamless node adder with undo/redo + node customizer with templates/presets |
 //! | [`flow_control`] | Advanced flow control engine with ML-aware decisions |
+//! | [`job_scheduler`] | Job scheduling and task lifecycle (Epic J) |
 //!
 //! ## Quick start
 //!
@@ -64,6 +65,7 @@
 pub mod action_log;
 pub mod controller;
 pub mod flow_control;
+pub mod job_scheduler;
 pub mod mesh;
 pub mod model_runtime;
 pub mod node;
@@ -143,3 +145,22 @@ pub use node::{Node, NodeCustomizer, NodeGraph, NodeTemplate};
 pub use orchestrator::{LocalOrchestrator, OrchestratorEvent};
 pub use registry::{BlockRegistry, RuntimeBinding};
 pub use task_allocator::TaskAllocator;
+pub use job_scheduler::{
+    CancellationToken,
+    DimensionQuota,
+    JobEntry,
+    JobScheduler,
+    Lease,
+    PreemptionPolicy,
+    RateLimiter,
+    RetryPolicy,
+    SchedulerError,
+    TaskDag,
+    TaskIndex,
+    TaskPriority,
+    TaskSnapshot,
+    TaskState,
+    TaskTemplate,
+    TaskTemplateRegistry,
+    should_preempt,
+};

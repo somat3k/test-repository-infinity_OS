@@ -116,16 +116,16 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md`](docs/architecture/epic-i-implementation.md)
 
 ## J. Job Scheduling and Task Lifecycle
-- [ ] Define task states (queued/running/paused/failed/completed).
-- [ ] Implement priority-aware scheduling.
-- [ ] Add retries, backoff, and cancellation semantics.
-- [ ] Implement task leasing/heartbeats for distributed workers.
-- [ ] Implement per-dimension quotas and rate limiting.
-- [ ] Add dependency-aware scheduling (DAG-based).
-- [ ] Implement task preemption policy.
-- [ ] Add task persistence + recovery after crash/restart.
-- [ ] Add task templates (for repeated workflows).
-- [ ] Add unique TaskID enforcement + index across dimensions.
+- [x] Define task states (queued/running/paused/failed/completed). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskState`)
+- [x] Implement priority-aware scheduling. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskPriority`, `JobScheduler`)
+- [x] Add retries, backoff, and cancellation semantics. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`RetryPolicy`, `CancellationToken`)
+- [x] Implement task leasing/heartbeats for distributed workers. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`Lease`)
+- [x] Implement per-dimension quotas and rate limiting. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`DimensionQuota`, `RateLimiter`)
+- [x] Add dependency-aware scheduling (DAG-based). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskDag`)
+- [x] Implement task preemption policy. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`PreemptionPolicy`, `should_preempt`)
+- [x] Add task persistence + recovery after crash/restart. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskSnapshot`)
+- [x] Add task templates (for repeated workflows). (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskTemplate`, `TaskTemplateRegistry`)
+- [x] Add unique TaskID enforcement + index across dimensions. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/job_scheduler.rs (`TaskIndex`)
 
 ## K. Kaizen Reliability Loop
 - [ ] Define weekly reliability review cadence.
