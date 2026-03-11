@@ -65,6 +65,7 @@ pub mod action_log;
 pub mod controller;
 pub mod flow_control;
 pub mod mesh;
+pub mod model_runtime;
 pub mod node;
 pub mod orchestrator;
 pub mod registry;
@@ -108,6 +109,33 @@ pub use flow_control::{
     SnippetAttachment,
     SnippetSandboxProfile,
     TerminalSession,
+};
+pub use model_runtime::{
+    HyperparameterAdjustment,
+    HyperparameterPolicy,
+    HyperparameterRule,
+    Hyperparameters,
+    InMemoryReplicaKernel,
+    ModelEnsemblePlan,
+    ModelKind,
+    ModelModule,
+    ModelModuleSelection,
+    ModelOptimizationDecision,
+    ModelPerformanceManager,
+    ModelProfile,
+    ModelReloadPolicy,
+    ModelReloadRequest,
+    ModelReplicaError,
+    ModelReplicaPool,
+    ModelRuntimeError,
+    PerformanceSample,
+    ReplicaDemand,
+    ReplicaHandle,
+    ReplicaId,
+    ReplicaKernel,
+    ReplicaKernelError,
+    ReplicaPolicy,
+    ReplicaProvisioning,
 };
 pub use mesh::{MeshArtifactBuilder, MeshArtifactStore};
 pub use node::{Node, NodeCustomizer, NodeGraph, NodeTemplate};

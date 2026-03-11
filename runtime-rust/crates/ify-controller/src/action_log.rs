@@ -83,6 +83,18 @@ pub enum EventType {
     /// Flow advanced to the next step.
     FlowAdvanced,
 
+    // --- Model runtime events ---
+    /// Hyperparameters were adjusted based on performance.
+    ModelHyperparametersAdjusted,
+    /// A model reload was requested based on performance.
+    ModelReloadRequested,
+
+    // --- Replica events ---
+    /// A kernel replica was provisioned for a model module.
+    ReplicaProvisioned,
+    /// A kernel replica was released.
+    ReplicaReleased,
+
     // --- Chat events ---
     /// A chat request was received for payload adaptation.
     ChatRequestReceived,
@@ -139,6 +151,10 @@ impl EventType {
             Self::NodeRedo => "node.redo",
             Self::FlowEvaluated => "flow.evaluated",
             Self::FlowAdvanced => "flow.advanced",
+            Self::ModelHyperparametersAdjusted => "model.hyperparameters_adjusted",
+            Self::ModelReloadRequested => "model.reload_requested",
+            Self::ReplicaProvisioned => "replica.provisioned",
+            Self::ReplicaReleased => "replica.released",
             Self::ChatRequestReceived => "chat.request_received",
             Self::ChatPayloadGenerated => "chat.payload_generated",
             Self::ArtifactProduced => "artifact.produced",

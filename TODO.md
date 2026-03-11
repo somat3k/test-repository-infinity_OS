@@ -89,6 +89,8 @@ Status legend: `[ ]` pending, `[-]` in progress, `[x]` complete
 - [x] Define incident response process for agent/tool compromise. ([docs/governance/incident-response.md](docs/governance/incident-response.md))
 
 ## H. Hyperperformance Optimization
+- [x] Add performance-driven hyperparameter tuning with quick reload triggers.
+- [x] Add kernel-style replica pooling for multi-model (ML + AI) execution stacks.
 - [ ] Set baseline performance budgets (latency/throughput/memory) per subsystem.
 - [ ] Add profiling hooks to critical execution paths.
 - [ ] Implement benchmark suite for kernel/runtime/canvas/graph.

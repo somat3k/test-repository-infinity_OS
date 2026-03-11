@@ -92,14 +92,28 @@ All ActionLog entries share a common envelope:
 | `flow.evaluated` | A flow control decision was evaluated. | `step_id`, `decision`, `matched` |
 | `flow.advanced` | Flow advanced to the next step. | `from`, `to` |
 
-### 3.6 Chat Events
+### 3.6 Model Runtime Events
+
+| Event Type | Description | Required Payload Fields |
+|------------|-------------|------------------------|
+| `model.hyperparameters_adjusted` | Hyperparameters were tuned based on live performance. | `model_id`, `changes`, `metric`, `observed`, `threshold` |
+| `model.reload_requested` | A model reload was requested for recovery. | `model_id`, `reload_generation`, `metric`, `observed`, `threshold` |
+
+### 3.7 Replica Events
+
+| Event Type | Description | Required Payload Fields |
+|------------|-------------|------------------------|
+| `replica.provisioned` | A kernel replica was provisioned for a model module. | `replica_id`, `model_id`, `module_id` |
+| `replica.released` | A kernel replica was released. | `replica_id`, `model_id`, `module_id` |
+
+### 3.8 Chat Events
 
 | Event Type | Description | Required Payload Fields |
 |------------|-------------|------------------------|
 | `chat.request_received` | A chat request was received for payload adaptation. | `request_id`, `message` |
 | `chat.payload_generated` | A chat payload was generated for execution. | `request_id`, `intent` |
 
-### 3.7 Agent Events
+### 3.9 Agent Events
 
 | Event Type | Description | Required Payload Fields |
 |------------|-------------|------------------------|
@@ -108,7 +122,7 @@ All ActionLog entries share a common envelope:
 | `agent.tool_result` | A tool returned a result. | `tool_name`, `result_artifact_id` |
 | `agent.evaluated` | An agent's output was scored. | `evaluator_id`, `score` |
 
-### 3.8 Controller Events
+### 3.10 Controller Events
 
 | Event Type | Description | Required Payload Fields |
 |------------|-------------|------------------------|
@@ -117,7 +131,7 @@ All ActionLog entries share a common envelope:
 | `controller.isolated` | Controller isolated (sandbox mode). | `reason` |
 | `controller.disposed` | Controller lifecycle ended. | `lifetime_ms` |
 
-### 3.9 System / Kernel Events
+### 3.11 System / Kernel Events
 
 | Event Type | Description | Required Payload Fields |
 |------------|-------------|------------------------|
