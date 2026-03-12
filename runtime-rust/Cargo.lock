@@ -168,6 +168,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ify-quality"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "ify-reliability"
 version = "0.1.0"
 dependencies = [

@@ -1,0 +1,14 @@
+{
+  "id": "cycle",
+  "description": "Cyclic graph: X -> Y -> Z -> X",
+  "nodes": [
+    { "id": "X", "label": "X", "metadata": {} },
+    { "id": "Y", "label": "Y", "metadata": {} },
+    { "id": "Z", "label": "Z", "metadata": {} }
+  ],
+  "edges": [
+    { "from": "X", "to": "Y", "label": null },
+    { "from": "Y", "to": "Z", "label": null },
+    { "from": "Z", "to": "X", "label": null }
+  ]
+}

@@ -167,6 +167,26 @@ Must guarantee:
 - least-privilege capability templates and approval workflows for privileged actions,
 - pre-release security hardening reviews aligned with policies in docs/governance/.
 
+### 2.8 Quality Engineering Agent
+Owns:
+- test strategy definition and enforcement across all layers (unit, integration, performance),
+- deterministic test datasets for graph and data-pipeline paths,
+- quality gate configuration and CI metric evaluation,
+- fuzz target registry and seed corpus management,
+- SAST/DAST pipeline definitions and finding triage,
+- contract test registry and conformance probe execution,
+- golden snapshot management for UI layouts,
+- load-test scenario registry and in-process smoke harnesses,
+- test reporting widget data and artifact production,
+- release candidate validation checklist lifecycle.
+
+Must guarantee:
+- all quality gates are evaluated on every merge request,
+- no regressions in test coverage, performance, or security posture are silently merged,
+- fuzz campaigns run on every CI nightly build and findings are triaged within one sprint,
+- RC checklists are persisted as mesh artifacts and signed off before release tagging,
+- test report snapshots are produced as structured JSON artifacts after every CI run.
+
 ## 3) Core Concepts (What)
 
 ### 3.1 Dimensions

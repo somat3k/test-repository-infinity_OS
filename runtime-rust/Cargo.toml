@@ -9,6 +9,7 @@ members = [
     "crates/ify-canvas",
     "crates/ify-reliability",
     "crates/ify-security",
+    "crates/ify-quality",
 ]
 
 [workspace.package]
@@ -42,3 +43,4 @@ ify-controller = { path = "crates/ify-controller" }
 ify-canvas     = { path = "crates/ify-canvas" }
 ify-reliability = { path = "crates/ify-reliability" }
 ify-security   = { path = "crates/ify-security" }
+ify-quality    = { path = "crates/ify-quality" }

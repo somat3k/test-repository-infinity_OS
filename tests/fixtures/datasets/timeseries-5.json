@@ -1,0 +1,12 @@
+{
+  "id": "timeseries-5",
+  "description": "5-row time-series dataset: (timestamp, value, label)",
+  "columns": ["timestamp", "value", "label"],
+  "records": [
+    { "index": 0, "fields": { "timestamp": 1700000000, "value": 0.0, "label": "point-0" } },
+    { "index": 1, "fields": { "timestamp": 1700000060, "value": 1.5, "label": "point-1" } },
+    { "index": 2, "fields": { "timestamp": 1700000120, "value": 3.0, "label": "point-2" } },
+    { "index": 3, "fields": { "timestamp": 1700000180, "value": 4.5, "label": "point-3" } },
+    { "index": 4, "fields": { "timestamp": 1700000240, "value": 6.0, "label": "point-4" } }
+  ]
+}
