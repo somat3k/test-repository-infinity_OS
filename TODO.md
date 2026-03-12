@@ -212,16 +212,16 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add release candidate validation checklist. (Owner: copilot, 2026-03-12) → docs/quality/release-candidate-checklist.md + ify-quality::rc_checklist
 
 ## R. Rust Performer Runtime
-- [ ] Scaffold runtime crates and workspace.
-- [ ] Implement executor for agentic combo ML tasks.
-- [ ] Add safe FFI boundary wrappers for kernel calls.
-- [ ] Implement tool runner abstraction (db/http/blockchain/model).
-- [ ] Implement memory subsystem (short/long-term, vector store hook).
-- [ ] Add planner integration (plans → tasks → nodes).
-- [ ] Add cancellation and cooperative yield.
-- [ ] Add sandbox integration (capabilities passed from kernel).
-- [ ] Add structured logging + traces.
-- [ ] Add conformance tests against kernel ABI.
+- [x] Scaffold runtime crates and workspace. (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-runtime/
+- [x] Implement executor for agentic combo ML tasks. (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-runtime/src/agent_executor.rs
+- [x] Add safe FFI boundary wrappers for kernel calls. (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-ffi/src/lib.rs (SchedulerHandle, MemoryHandle)
+- [x] Implement tool runner abstraction (db/http/blockchain/model). (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-runtime/src/tool_runner.rs
+- [x] Implement memory subsystem (short/long-term, vector store hook). (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-runtime/src/memory.rs
+- [x] Add planner integration (plans → tasks → nodes). (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-runtime/src/planner.rs
+- [x] Add cancellation and cooperative yield. (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-runtime/src/yield_token.rs
+- [x] Add sandbox integration (capabilities passed from kernel). (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-runtime/src/sandbox.rs
+- [x] Add structured logging + traces. (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-runtime/src/telemetry.rs
+- [x] Add conformance tests against kernel ABI. (Owner: copilot, 2026-03-12) → runtime-rust/crates/ify-ffi/src/lib.rs (AbiConformance)
 
 ## S. Snippet and Agent Marketplace Foundations
 - [ ] Define package format for reusable snippets/agents.
