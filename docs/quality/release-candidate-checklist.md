@@ -56,7 +56,6 @@ signed-off, or waived) before the release tag may be created.
 
 | ID | Blocking | Description | Evidence Required |
 |----|----------|-------------|-------------------|
-| `contract-conformance-verified` | ✅ | All IDL contract conformance probes pass | Contract test run report |
 | `abi-compatibility-confirmed` | ✅ | Kernel ABI version negotiation tested | ABI conformance test run output |
 
 ### Operations
@@ -102,8 +101,8 @@ cl.item_mut("unit-tests-pass")
 // Export as Markdown.
 println!("{}", cl.to_markdown());
 
-// Check release readiness.
-assert!(cl.is_release_ready() || !cl.blocking_unresolved().next().is_none());
+// Check release readiness: all blocking items must be resolved.
+assert!(cl.is_release_ready());
 ```
 
 ---

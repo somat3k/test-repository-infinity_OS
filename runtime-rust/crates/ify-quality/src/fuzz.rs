@@ -28,6 +28,9 @@ pub enum FuzzError {
     /// A referenced target does not exist.
     #[error("unknown fuzz target: {0}")]
     UnknownTarget(String),
+    /// A corpus entry contains invalid base64 data.
+    #[error("invalid base64 data in corpus entry '{0}': {1}")]
+    InvalidCorpusData(String, String),
 }
 
 // ---------------------------------------------------------------------------
@@ -85,8 +88,13 @@ impl CorpusEntry {
     }
 
     /// Decode and return the raw bytes.
-    pub fn bytes(&self) -> Vec<u8> {
+    ///
+    /// # Errors
+    /// Returns [`FuzzError::InvalidCorpusData`] if the stored base64 contains
+    /// characters outside the standard alphabet.
+    pub fn bytes(&self) -> Result<Vec<u8>, FuzzError> {
         Base64Standard::decode(&self.data_b64)
+            .map_err(|msg| FuzzError::InvalidCorpusData(self.name.clone(), msg))
     }
 }
 
@@ -120,18 +128,25 @@ impl Base64Standard {
         encoded
     }
 
-    fn decode(input: &str) -> Vec<u8> {
+    fn decode(input: &str) -> Result<Vec<u8>, String> {
+        // Build a lookup table: 0xFF marks invalid characters.
         let table: [u8; 256] = {
-            let mut t = [0u8; 256];
+            let mut t = [0xFFu8; 256];
             for (i, &c) in Self::ALPHABET.iter().enumerate() {
                 t[c as usize] = i as u8;
             }
+            t['=' as usize] = 0; // padding is treated as zero
             t
         };
         let input = input.trim_end_matches('=');
         let mut decoded = Vec::with_capacity(input.len() * 3 / 4);
         let chars: Vec<u8> = input.bytes().collect();
         for chunk in chars.chunks(4) {
+            for &byte in chunk {
+                if table[byte as usize] == 0xFF {
+                    return Err(format!("invalid base64 character: {:?}", byte as char));
+                }
+            }
             let c0 = table[chunk[0] as usize];
             let c1 = if chunk.len() > 1 { table[chunk[1] as usize] } else { 0 };
             let c2 = if chunk.len() > 2 { table[chunk[2] as usize] } else { 0 };
@@ -140,7 +155,7 @@ impl Base64Standard {
             if chunk.len() > 2 { decoded.push((c1 << 4) | (c2 >> 2)); }
             if chunk.len() > 3 { decoded.push((c2 << 6) | c3); }
         }
-        decoded
+        Ok(decoded)
     }
 }
 
@@ -210,7 +225,7 @@ impl FuzzRegistry {
     pub fn canonical() -> Self {
         let mut reg = Self::default();
 
-        reg.register(
+        let _ = reg.register(
             FuzzTarget::new(
                 "fuzz_json_deserializer",
                 FuzzCategory::Serialization,
@@ -224,9 +239,9 @@ impl FuzzRegistry {
                 CorpusEntry::from_bytes("empty_array", b"[]")
                     .with_description("minimal valid JSON array"),
             ),
-        ).expect("unique");
+        );
 
-        reg.register(
+        let _ = reg.register(
             FuzzTarget::new(
                 "fuzz_graph_wire_format",
                 FuzzCategory::GraphParsing,
@@ -239,41 +254,41 @@ impl FuzzRegistry {
                 )
                 .with_description("empty graph JSON"),
             ),
-        ).expect("unique");
+        );
 
-        reg.register(
+        let _ = reg.register(
             FuzzTarget::new(
                 "fuzz_mesh_framing",
                 FuzzCategory::MeshProtocol,
                 "Fuzz the mesh artifact framing/deframing layer",
             )
             .with_max_len(65536),
-        ).expect("unique");
+        );
 
-        reg.register(
+        let _ = reg.register(
             FuzzTarget::new(
                 "fuzz_actionlog_event",
                 FuzzCategory::ActionLogParsing,
                 "Fuzz ActionLog event deserialization to find malformed-input crashes",
             ),
-        ).expect("unique");
+        );
 
-        reg.register(
+        let _ = reg.register(
             FuzzTarget::new(
                 "fuzz_ffi_boundary",
                 FuzzCategory::FfiBoundary,
                 "Fuzz C↔Rust FFI boundary input validation routines",
             )
             .with_max_len(256),
-        ).expect("unique");
+        );
 
-        reg.register(
+        let _ = reg.register(
             FuzzTarget::new(
                 "fuzz_input_validator",
                 FuzzCategory::InputValidation,
                 "Fuzz the ify-security InputValidator with arbitrary JSON payloads",
             ),
-        ).expect("unique");
+        );
 
         reg
     }
@@ -337,7 +352,15 @@ mod tests {
     fn corpus_entry_roundtrips_bytes() {
         let original = b"hello fuzz world";
         let entry = CorpusEntry::from_bytes("test", original);
-        assert_eq!(entry.bytes(), original);
+        assert_eq!(entry.bytes().unwrap(), original);
+    }
+
+    #[test]
+    fn corpus_entry_bytes_errors_on_invalid_base64() {
+        let mut entry = CorpusEntry::from_bytes("test", b"hello");
+        // Corrupt the stored base64 with an invalid character.
+        entry.data_b64 = "!!!invalid!!!".to_string();
+        assert!(entry.bytes().is_err());
     }
 
     #[test]

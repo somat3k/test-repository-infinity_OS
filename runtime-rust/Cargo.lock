@@ -171,14 +171,9 @@ dependencies = [
 name = "ify-quality"
 version = "0.1.0"
 dependencies = [
- "ify-controller",
- "ify-core",
- "ify-interfaces",
  "serde",
  "serde_json",
  "thiserror",
- "tracing",
- "uuid",
 ]
 
 [[package]]

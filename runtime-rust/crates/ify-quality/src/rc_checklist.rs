@@ -148,13 +148,14 @@ impl RcChecklistItem {
     /// Sign off on a complete item.
     ///
     /// # Errors
-    /// Returns [`RcChecklistError::NotComplete`] if the item is still `Pending`.
+    /// Returns [`RcChecklistError::NotComplete`] if the item is not in `Complete`
+    /// state (i.e., it is still `Pending`, already `SignedOff`, or has been `Waived`).
     pub fn sign_off(
         &mut self,
         reviewer: impl Into<String>,
         timestamp: impl Into<String>,
     ) -> Result<(), RcChecklistError> {
-        if self.state == ItemState::Pending {
+        if self.state != ItemState::Complete {
             return Err(RcChecklistError::NotComplete(self.id.clone()));
         }
         self.state = ItemState::SignedOff {
@@ -251,100 +252,100 @@ impl RcChecklist {
         let mut cl = Self::new(rc_id, created_at);
 
         // Testing
-        cl.add(RcChecklistItem::blocking(
+        let _ = cl.add(RcChecklistItem::blocking(
             "unit-tests-pass",
             RcCategory::Testing,
             "All unit test suites pass with no failures",
             "CI test job URL or cargo test output",
-        )).expect("unique");
-        cl.add(RcChecklistItem::blocking(
+        ));
+        let _ = cl.add(RcChecklistItem::blocking(
             "integration-tests-pass",
             RcCategory::Testing,
             "All integration test suites pass with no failures",
             "CI integration job URL",
-        )).expect("unique");
-        cl.add(RcChecklistItem::blocking(
+        ));
+        let _ = cl.add(RcChecklistItem::blocking(
             "coverage-thresholds-met",
             RcCategory::Testing,
             "Line coverage ≥ 80 % and branch coverage ≥ 70 % for all layers",
             "Coverage report artifact link",
-        )).expect("unique");
-        cl.add(RcChecklistItem::blocking(
+        ));
+        let _ = cl.add(RcChecklistItem::blocking(
             "contract-conformance-verified",
             RcCategory::Compatibility,
             "All IDL contract conformance probes pass",
             "Contract test run report",
-        )).expect("unique");
-        cl.add(RcChecklistItem::advisory(
+        ));
+        let _ = cl.add(RcChecklistItem::advisory(
             "fuzz-campaigns-clean",
             RcCategory::Testing,
             "No new crashes found in fuzz campaigns since previous RC",
             "Fuzz campaign summary artifact",
-        )).expect("unique");
+        ));
 
         // Performance
-        cl.add(RcChecklistItem::blocking(
+        let _ = cl.add(RcChecklistItem::blocking(
             "perf-no-throughput-regression",
             RcCategory::Performance,
             "Orchestrator and mesh throughput within 10 % of baseline",
             "Benchmark comparison report",
-        )).expect("unique");
-        cl.add(RcChecklistItem::blocking(
+        ));
+        let _ = cl.add(RcChecklistItem::blocking(
             "perf-no-p99-regression",
             RcCategory::Performance,
             "p99 latency within 20 % of baseline for all measured paths",
             "Benchmark comparison report",
-        )).expect("unique");
+        ));
 
         // Security
-        cl.add(RcChecklistItem::blocking(
+        let _ = cl.add(RcChecklistItem::blocking(
             "sast-scan-clean",
             RcCategory::Security,
             "SAST pipeline (cargo-audit, cargo-deny, semgrep, CodeQL) reports no critical/high findings",
             "SAST scan report artifact",
-        )).expect("unique");
-        cl.add(RcChecklistItem::blocking(
+        ));
+        let _ = cl.add(RcChecklistItem::blocking(
             "dast-scan-clean",
             RcCategory::Security,
             "DAST pipeline reports no high-risk findings against local API surface",
             "DAST scan report artifact",
-        )).expect("unique");
-        cl.add(RcChecklistItem::advisory(
+        ));
+        let _ = cl.add(RcChecklistItem::advisory(
             "sbom-generated",
             RcCategory::Security,
             "SBOM generated and attached as a release artifact",
             "SBOM artifact link",
-        )).expect("unique");
+        ));
 
         // Documentation
-        cl.add(RcChecklistItem::blocking(
+        let _ = cl.add(RcChecklistItem::blocking(
             "changelog-updated",
             RcCategory::Documentation,
             "CHANGELOG entry written for this release",
             "CHANGELOG.md diff link",
-        )).expect("unique");
-        cl.add(RcChecklistItem::advisory(
+        ));
+        let _ = cl.add(RcChecklistItem::advisory(
             "api-docs-regenerated",
             RcCategory::Documentation,
             "Rust API docs regenerated with `cargo doc` and reviewed for completeness",
             "cargo doc output / docs.rs preview",
-        )).expect("unique");
+        ));
 
         // Operations
-        cl.add(RcChecklistItem::blocking(
+        let _ = cl.add(RcChecklistItem::blocking(
             "runbook-reviewed",
             RcCategory::Operations,
             "Operational runbook reviewed and updated for this release",
             "Runbook diff link",
-        )).expect("unique");
+        ));
 
         // Compatibility
-        cl.add(RcChecklistItem::blocking(
+        let _ = cl.add(RcChecklistItem::blocking(
             "abi-compatibility-confirmed",
             RcCategory::Compatibility,
             "Kernel ABI version negotiation tested against all supported runtime versions",
             "ABI conformance test run output",
-        )).expect("unique");
+        ));
 
         cl
     }

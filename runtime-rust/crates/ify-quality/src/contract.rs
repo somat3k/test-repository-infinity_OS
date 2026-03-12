@@ -171,7 +171,7 @@ impl ContractRegistry {
     pub fn canonical() -> Self {
         let mut r = Self::default();
 
-        r.add(
+        let _ = r.add(
             InterfaceContract::new("mesh-artifact-api-v1", InterfaceLayer::RustTraits, "1.0.0")
                 .with_invariant(ContractInvariant::mandatory(
                     "produce-returns-artifact-id",
@@ -189,9 +189,9 @@ impl ContractRegistry {
                     "diff-patch-idempotent",
                     "Applying a patch twice must yield the same result as applying it once",
                 )),
-        ).expect("unique");
+        );
 
-        r.add(
+        let _ = r.add(
             InterfaceContract::new("event-bus-api-v1", InterfaceLayer::RustTraits, "1.0.0")
                 .with_invariant(ContractInvariant::mandatory(
                     "emit-records-event",
@@ -205,9 +205,9 @@ impl ContractRegistry {
                     "correlation-id-propagated",
                     "All emitted events must carry a non-empty correlation_id",
                 )),
-        ).expect("unique");
+        );
 
-        r.add(
+        let _ = r.add(
             InterfaceContract::new("node-execution-api-v1", InterfaceLayer::RustTraits, "1.0.0")
                 .with_invariant(ContractInvariant::mandatory(
                     "plan-returns-dag",
@@ -221,9 +221,9 @@ impl ContractRegistry {
                     "report-includes-task-id",
                     "report() output must include the originating TaskId",
                 )),
-        ).expect("unique");
+        );
 
-        r.add(
+        let _ = r.add(
             InterfaceContract::new("kernel-abi-v1", InterfaceLayer::KernelAbi, "1.0.0")
                 .with_invariant(ContractInvariant::mandatory(
                     "ffi-init-returns-zero-on-success",
@@ -237,9 +237,9 @@ impl ContractRegistry {
                     "alloc-returns-aligned-pointer",
                     "ify_alloc() must return a pointer aligned to at least 8 bytes, or NULL on OOM",
                 )),
-        ).expect("unique");
+        );
 
-        r.add(
+        let _ = r.add(
             InterfaceContract::new("editor-integration-api-v1", InterfaceLayer::EditorApi, "1.0.0")
                 .with_invariant(ContractInvariant::mandatory(
                     "attach-interpreter-idempotent",
@@ -249,7 +249,7 @@ impl ContractRegistry {
                     "bind-runtime-returns-handle",
                     "bind_runtime() must return a non-null RuntimeHandle",
                 )),
-        ).expect("unique");
+        );
 
         r
     }

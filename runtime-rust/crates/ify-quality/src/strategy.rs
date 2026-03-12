@@ -48,7 +48,7 @@ pub enum TestedLayer {
     Kernel,
     /// Rust performer runtime crates (ify-core, ify-executor, ify-ffi, ify-interfaces).
     RuntimeCore,
-    /// ify-controller crate (blockControllerGenerator regime).
+    /// ify-controller crate (orchestration and high-level workflow logic).
     Controller,
     /// ify-canvas crate (UI contracts).
     Canvas,
@@ -177,8 +177,8 @@ impl TestStrategy {
     pub fn canonical() -> Self {
         let mut s = Self::default();
 
-        let line80 = CoverageThreshold::new(80.0, 70.0).expect("valid");
-        let line70 = CoverageThreshold::new(70.0, 60.0).expect("valid");
+        let line80 = CoverageThreshold { line_coverage_pct: 80.0, branch_coverage_pct: 70.0 };
+        let line70 = CoverageThreshold { line_coverage_pct: 70.0, branch_coverage_pct: 60.0 };
 
         // --- Unit suites ---
         for (name, layer) in [

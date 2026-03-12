@@ -82,12 +82,19 @@ impl LayoutNode {
 
     /// Serialize to a stable, human-readable JSON string for snapshotting.
     ///
-    /// # Panics
-    /// This should never panic in practice because all fields are serializable.
+    /// In the unlikely event that serialization fails (which cannot happen for
+    /// well-formed `LayoutNode` values), a best-effort error JSON is returned
+    /// instead of panicking.
     pub fn to_snapshot_string(&self) -> String {
-        // Sort keys for deterministic output.
-        serde_json::to_string_pretty(self)
-            .expect("LayoutNode is always JSON-serializable")
+        match serde_json::to_string_pretty(self) {
+            Ok(json) => json,
+            Err(err) => {
+                format!(
+                    "{{\"serialization_error\":\"{}\",\"component\":\"{}\"}}",
+                    err, self.component
+                )
+            }
+        }
     }
 }
 

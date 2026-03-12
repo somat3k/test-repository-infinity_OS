@@ -181,7 +181,7 @@ impl LoadScenarioRegistry {
     pub fn canonical() -> Self {
         let mut r = Self::default();
 
-        r.add(LoadScenario::new(
+        let _ = r.add(LoadScenario::new(
             "orchestrator-single-threaded-baseline",
             LoadTarget::Orchestrator,
             1,
@@ -189,9 +189,9 @@ impl LoadScenarioRegistry {
             500.0,   // ≥ 500 ops/s
             50.0,    // p99 ≤ 50 ms
             "Single-threaded orchestrator baseline: 1 000 sequential task submissions",
-        )).expect("unique");
+        ));
 
-        r.add(LoadScenario::new(
+        let _ = r.add(LoadScenario::new(
             "orchestrator-high-concurrency",
             LoadTarget::Orchestrator,
             16,
@@ -199,9 +199,9 @@ impl LoadScenarioRegistry {
             5_000.0, // ≥ 5 000 ops/s
             100.0,   // p99 ≤ 100 ms
             "High-concurrency orchestrator: 16 concurrent workers, 10 000 tasks",
-        )).expect("unique");
+        ));
 
-        r.add(LoadScenario::new(
+        let _ = r.add(LoadScenario::new(
             "mesh-produce-consume-baseline",
             LoadTarget::MeshArtifactBus,
             1,
@@ -209,9 +209,9 @@ impl LoadScenarioRegistry {
             1_000.0, // ≥ 1 000 ops/s
             20.0,    // p99 ≤ 20 ms
             "Single-threaded mesh produce/consume: 1 000 artifacts",
-        )).expect("unique");
+        ));
 
-        r.add(LoadScenario::new(
+        let _ = r.add(LoadScenario::new(
             "mesh-high-concurrency",
             LoadTarget::MeshArtifactBus,
             8,
@@ -219,9 +219,9 @@ impl LoadScenarioRegistry {
             3_000.0, // ≥ 3 000 ops/s
             50.0,    // p99 ≤ 50 ms
             "High-concurrency mesh: 8 concurrent producers/consumers, 5 000 artifacts",
-        )).expect("unique");
+        ));
 
-        r.add(LoadScenario::new(
+        let _ = r.add(LoadScenario::new(
             "actionlog-write-throughput",
             LoadTarget::ActionLog,
             4,
@@ -229,7 +229,7 @@ impl LoadScenarioRegistry {
             10_000.0, // ≥ 10 000 events/s
             10.0,     // p99 ≤ 10 ms
             "ActionLog write throughput: 4 concurrent writers, 10 000 events",
-        )).expect("unique");
+        ));
 
         r
     }
@@ -276,6 +276,18 @@ impl LoadRunner {
     /// `Vec<Duration>` — representative of the overhead added by any real
     /// measurement harness.
     pub fn run_noop(scenario: &LoadScenario) -> LoadResult {
+        // Guard: zero-op scenario returns a zeroed result without indexing.
+        if scenario.total_ops == 0 {
+            return LoadResult {
+                scenario: scenario.name.clone(),
+                ops_completed: 0,
+                elapsed_secs: 0.0,
+                throughput_ops_per_sec: 0.0,
+                latency: LatencyHistogram { p50_ms: 0.0, p95_ms: 0.0, p99_ms: 0.0, max_ms: 0.0 },
+                passed: false,
+            };
+        }
+
         let start = Instant::now();
         let mut latencies_ns: Vec<u64> = Vec::with_capacity(scenario.total_ops as usize);
 
@@ -296,7 +308,11 @@ impl LoadRunner {
         };
 
         let elapsed_secs = elapsed.as_secs_f64();
-        let throughput = scenario.total_ops as f64 / elapsed_secs;
+        let throughput = if elapsed_secs <= 0.0 {
+            0.0
+        } else {
+            scenario.total_ops as f64 / elapsed_secs
+        };
 
         let mut result = LoadResult {
             scenario: scenario.name.clone(),
@@ -382,5 +398,21 @@ mod tests {
         let s = LoadScenario::new("s", LoadTarget::Orchestrator, 1, 100, 1.0, 1000.0, "d");
         r.add(s.clone()).unwrap();
         assert!(r.add(s).is_err());
+    }
+
+    #[test]
+    fn noop_runner_zero_ops_does_not_panic() {
+        let scenario = LoadScenario::new(
+            "zero-ops",
+            LoadTarget::Orchestrator,
+            1,
+            0,
+            0.0,
+            f64::MAX,
+            "zero-op scenario must not panic",
+        );
+        let result = LoadRunner::run_noop(&scenario);
+        assert_eq!(result.ops_completed, 0);
+        assert_eq!(result.throughput_ops_per_sec, 0.0);
     }
 }

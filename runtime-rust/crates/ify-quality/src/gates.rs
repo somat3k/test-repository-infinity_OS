@@ -187,95 +187,95 @@ impl QualityGateSet {
     pub fn canonical() -> Self {
         let mut gs = Self::default();
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "all-unit-tests-pass",
             GateCategory::TestPassing,
             "unit_tests_passed",
             GateOp::Equal,
             1.0,
             "All unit tests must pass (1.0 = pass, 0.0 = failure)",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "all-integration-tests-pass",
             GateCategory::TestPassing,
             "integration_tests_passed",
             GateOp::Equal,
             1.0,
             "All integration tests must pass",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "line-coverage-min-80",
             GateCategory::Coverage,
             "line_coverage_pct",
             GateOp::AtLeast,
             80.0,
             "Line coverage must be at least 80 %",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "branch-coverage-min-70",
             GateCategory::Coverage,
             "branch_coverage_pct",
             GateOp::AtLeast,
             70.0,
             "Branch coverage must be at least 70 %",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "no-critical-security-findings",
             GateCategory::Security,
             "critical_security_findings",
             GateOp::AtMost,
             0.0,
             "Zero critical security findings allowed",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "no-high-security-findings",
             GateCategory::Security,
             "high_security_findings",
             GateOp::AtMost,
             0.0,
             "Zero high-severity security findings allowed",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "p99-latency-regression-max-20pct",
             GateCategory::Performance,
             "p99_latency_regression_pct",
             GateOp::AtMost,
             20.0,
             "p99 latency must not regress by more than 20 % vs baseline",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "throughput-regression-max-10pct",
             GateCategory::Performance,
             "throughput_regression_pct",
             GateOp::AtMost,
             10.0,
             "Throughput must not regress by more than 10 % vs baseline",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "contract-conformance-pass",
             GateCategory::ContractConformance,
             "contract_conformance_passed",
             GateOp::Equal,
             1.0,
             "All IDL contract conformance tests must pass",
-        )).expect("unique");
+        ));
 
-        gs.add(QualityGate::new(
+        let _ = gs.add(QualityGate::new(
             "changelog-present",
             GateCategory::Documentation,
             "changelog_entry_present",
             GateOp::Equal,
             1.0,
             "A CHANGELOG entry describing the change must be present",
-        )).expect("unique");
+        ));
 
         gs
     }
@@ -299,20 +299,20 @@ impl QualityGateSet {
 
     /// Evaluate all gates against a report and return the combined verdict.
     ///
-    /// Individual `MissingMetric` errors are treated as gate failures (the
-    /// metric was not produced, so the gate cannot pass).
+    /// Individual evaluation errors (such as `MissingMetric`) are treated as
+    /// gate failures (the metric was not produced or the gate could not be
+    /// evaluated, so the gate cannot pass).
     pub fn evaluate_all(&self, report: &MergeReadinessReport) -> GateSetVerdict {
         let mut outcomes = Vec::with_capacity(self.gates.len());
         for gate in &self.gates {
             let outcome = match gate.evaluate(report) {
                 Ok(o) => o,
-                Err(GateError::MissingMetric(_)) => GateOutcome {
+                Err(_) => GateOutcome {
                     gate_name: gate.name.clone(),
                     passed: false,
-                    metric_value: f64::NAN,
+                    metric_value: 0.0,
                     threshold: gate.threshold,
                 },
-                Err(_) => unreachable!("evaluate only returns MissingMetric"),
             };
             outcomes.push(outcome);
         }

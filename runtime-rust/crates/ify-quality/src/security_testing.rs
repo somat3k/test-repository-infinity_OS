@@ -178,46 +178,46 @@ impl SecurityPipeline {
         let mut p = Self::default();
 
         // SAST — Rust advisory/vulnerability database check.
-        p.add(ScannerConfig::new(
+        let _ = p.add(ScannerConfig::new(
             "cargo-audit",
             PipelineKind::Sca,
             "cargo audit --deny warnings",
             FindingSeverity::High,
-        )).expect("unique");
+        ));
 
         // SAST — deny.toml license + ban enforcement.
-        p.add(ScannerConfig::new(
+        let _ = p.add(ScannerConfig::new(
             "cargo-deny",
             PipelineKind::Sast,
             "cargo deny check",
             FindingSeverity::High,
-        )).expect("unique");
+        ));
 
         // SAST — Semgrep rules for Rust-specific patterns.
-        p.add(ScannerConfig::new(
+        let _ = p.add(ScannerConfig::new(
             "semgrep-rust",
             PipelineKind::Sast,
             "semgrep --config=p/rust --error",
             FindingSeverity::High,
         )
-        .with_option("config", "p/rust")).expect("unique");
+        .with_option("config", "p/rust"));
 
         // SAST — CodeQL for cross-language analysis (C + Rust).
-        p.add(ScannerConfig::new(
+        let _ = p.add(ScannerConfig::new(
             "codeql",
             PipelineKind::Sast,
             "codeql database analyze --format=sarif-latest",
             FindingSeverity::Critical,
-        )).expect("unique");
+        ));
 
         // DAST — OWASP ZAP baseline scan against the local API surface.
-        p.add(ScannerConfig::new(
+        let _ = p.add(ScannerConfig::new(
             "owasp-zap-baseline",
             PipelineKind::Dast,
             "zap-baseline.py -t http://localhost:8080",
             FindingSeverity::High,
         )
-        .with_option("risk-level", "medium")).expect("unique");
+        .with_option("risk-level", "medium"));
 
         p
     }
@@ -251,21 +251,31 @@ impl SecurityPipeline {
 
     /// Evaluate a set of findings against the configured scanner thresholds.
     ///
-    /// Returns `true` iff no finding meets or exceeds its scanner's
-    /// `fail_on_severity`.
+    /// Findings from **unknown scanners** (not registered in this pipeline) are
+    /// treated as blocking to prevent misconfiguration (e.g., renamed scanners)
+    /// from silently producing a false `passed` result.
     pub fn evaluate(&self, findings: &[SecurityFinding]) -> PipelineEvaluation {
-        let mut blocking: Vec<&SecurityFinding> = vec![];
+        let mut blocking_count = 0usize;
+        let mut unknown_scanner_count = 0usize;
         for finding in findings {
-            if let Some(scanner) = self.scanners.get(&finding.scanner) {
-                if finding.severity >= scanner.fail_on_severity {
-                    blocking.push(finding);
+            match self.scanners.get(&finding.scanner) {
+                Some(scanner) => {
+                    if finding.severity >= scanner.fail_on_severity {
+                        blocking_count += 1;
+                    }
+                }
+                None => {
+                    // Unknown scanner: treat as blocking to surface config drift.
+                    unknown_scanner_count += 1;
+                    blocking_count += 1;
                 }
             }
         }
         PipelineEvaluation {
-            passed: blocking.is_empty(),
+            passed: blocking_count == 0,
             total_findings: findings.len(),
-            blocking_count: blocking.len(),
+            blocking_count,
+            unknown_scanner_count,
         }
     }
 }
@@ -277,8 +287,11 @@ pub struct PipelineEvaluation {
     pub passed: bool,
     /// Total number of findings (all severities).
     pub total_findings: usize,
-    /// Number of findings that block the pipeline.
+    /// Number of findings that block the pipeline (including unknown scanners).
     pub blocking_count: usize,
+    /// Number of findings from scanners not registered in this pipeline.
+    /// A non-zero value indicates a configuration drift (e.g., a renamed scanner).
+    pub unknown_scanner_count: usize,
 }
 
 // ---------------------------------------------------------------------------
@@ -349,5 +362,20 @@ mod tests {
         assert!(FindingSeverity::High > FindingSeverity::Medium);
         assert!(FindingSeverity::Medium > FindingSeverity::Low);
         assert!(FindingSeverity::Low > FindingSeverity::Info);
+    }
+
+    #[test]
+    fn unknown_scanner_blocks_pipeline() {
+        let p = SecurityPipeline::canonical();
+        let finding = SecurityFinding::new(
+            "unregistered-scanner",
+            FindingSeverity::Low,
+            "some-finding",
+            "Finding from an unregistered scanner",
+        );
+        let eval = p.evaluate(&[finding]);
+        assert!(!eval.passed);
+        assert_eq!(eval.unknown_scanner_count, 1);
+        assert_eq!(eval.blocking_count, 1);
     }
 }

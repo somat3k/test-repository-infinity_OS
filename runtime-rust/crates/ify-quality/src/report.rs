@@ -201,30 +201,56 @@ impl TestReportSnapshot {
     /// security summary.  Must be called after all reports are added.
     pub fn derive_metrics(&mut self) {
         // unit_tests_passed / integration_tests_passed
-        let unit_ok = self
-            .suite_reports
-            .values()
-            .filter(|r| r.name.ends_with("-unit") || r.name.contains("-unit-"))
-            .all(|r| r.status == SuiteStatus::Passed);
-        let integration_ok = self
-            .suite_reports
-            .values()
-            .filter(|r| r.name.contains("-integration"))
-            .all(|r| r.status == SuiteStatus::Passed);
+        // Require at least one matching suite to be observed; an empty set is
+        // treated as 0.0 (not passed) to prevent false positives on empty snapshots.
+        let mut unit_any = false;
+        let mut unit_all_passed = true;
+        let mut integration_any = false;
+        let mut integration_all_passed = true;
 
+        for r in self.suite_reports.values() {
+            let is_unit = r.name.ends_with("-unit") || r.name.contains("-unit-");
+            let is_integration = r.name.contains("-integration");
+
+            if is_unit {
+                unit_any = true;
+                if r.status != SuiteStatus::Passed {
+                    unit_all_passed = false;
+                }
+            }
+            if is_integration {
+                integration_any = true;
+                if r.status != SuiteStatus::Passed {
+                    integration_all_passed = false;
+                }
+            }
+        }
+
+        let unit_ok = unit_any && unit_all_passed;
+        let integration_ok = integration_any && integration_all_passed;
         self.metrics.insert("unit_tests_passed".into(), if unit_ok { 1.0 } else { 0.0 });
         self.metrics.insert("integration_tests_passed".into(), if integration_ok { 1.0 } else { 0.0 });
 
-        // Aggregate coverage (average across suites that report it).
-        let cov_reports: Vec<_> = self
+        // Aggregate coverage: compute line and branch averages independently so
+        // that suites reporting only line coverage don't drag branch coverage
+        // down to 0.0.
+        let line_cov_values: Vec<f64> = self
             .suite_reports
             .values()
-            .filter_map(|r| r.line_coverage_pct.map(|l| (l, r.branch_coverage_pct.unwrap_or(0.0))))
+            .filter_map(|r| r.line_coverage_pct)
             .collect();
-        if !cov_reports.is_empty() {
-            let avg_line = cov_reports.iter().map(|(l, _)| l).sum::<f64>() / cov_reports.len() as f64;
-            let avg_branch = cov_reports.iter().map(|(_, b)| b).sum::<f64>() / cov_reports.len() as f64;
+        if !line_cov_values.is_empty() {
+            let avg_line = line_cov_values.iter().sum::<f64>() / line_cov_values.len() as f64;
             self.metrics.insert("line_coverage_pct".into(), avg_line);
+        }
+
+        let branch_cov_values: Vec<f64> = self
+            .suite_reports
+            .values()
+            .filter_map(|r| r.branch_coverage_pct)
+            .collect();
+        if !branch_cov_values.is_empty() {
+            let avg_branch = branch_cov_values.iter().sum::<f64>() / branch_cov_values.len() as f64;
             self.metrics.insert("branch_coverage_pct".into(), avg_branch);
         }
 
