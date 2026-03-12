@@ -187,6 +187,31 @@ pub enum EventType {
     /// A node instance was expanded from a template.
     InstanceCreated,
 
+    // --- Epic P: Processing and Transformation Pipeline events ---
+    /// A pipeline was created.
+    PipelineCreated,
+    /// A pipeline was executed.
+    PipelineExecuted,
+    /// A pipeline step was executed.
+    PipelineStepExecuted,
+    /// A pipeline step failed and its record was routed to the dead-letter queue.
+    PipelineStepDeadLettered,
+    /// A transform version was saved.
+    TransformVersionSaved,
+    /// A transform replay was requested.
+    TransformReplayRequested,
+    /// A data schema was registered or updated.
+    SchemaRegistered,
+    /// A schema validation was performed.
+    SchemaValidated,
+    /// A pipeline checkpoint was saved.
+    PipelineCheckpointed,
+    /// A pipeline was resumed from a checkpoint.
+    PipelineResumed,
+    /// A lineage record was created for a pipeline output.
+    PipelineLineageRecorded,
+    /// A storage connector was registered.
+    StorageConnectorRegistered,
     // --- Security / privileged action events (Epic O §3.8) ---
     /// A secret value was read by a privileged principal.
     PrivilegedReadSecret,
@@ -273,6 +298,18 @@ impl EventType {
             Self::TemplateCloned => "template.cloned",
             Self::TemplateForked => "template.forked",
             Self::InstanceCreated => "instance.created",
+            Self::PipelineCreated => "pipeline.created",
+            Self::PipelineExecuted => "pipeline.executed",
+            Self::PipelineStepExecuted => "pipeline_step.executed",
+            Self::PipelineStepDeadLettered => "pipeline_step.dead_lettered",
+            Self::TransformVersionSaved => "transform.version_saved",
+            Self::TransformReplayRequested => "transform.replay_requested",
+            Self::SchemaRegistered => "schema.registered",
+            Self::SchemaValidated => "schema.validated",
+            Self::PipelineCheckpointed => "pipeline.checkpointed",
+            Self::PipelineResumed => "pipeline.resumed",
+            Self::PipelineLineageRecorded => "pipeline.lineage_recorded",
+            Self::StorageConnectorRegistered => "storage_connector.registered",
             Self::PrivilegedReadSecret => "privileged.read_secret",
             Self::PrivilegedDeploy => "privileged.deploy",
             Self::PrivilegedCapabilityChange => "privileged.capability_change",
