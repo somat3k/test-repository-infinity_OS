@@ -8,7 +8,8 @@
 //!    ordered sequence forming a [`Pipeline`].
 //! 2. **Transform versioning and replay** — [`TransformVersion`] is an
 //!    immutable snapshot of a pipeline's steps at a point in time.
-//!    [`PipelineRegistry::replay_version`] re-executes any historic version.
+//!    [`PipelineRegistry::replay_version`] returns the steps snapshot for any
+//!    historic version so callers can re-apply the transform themselves.
 //! 3. **Dead-letter handling** — [`DeadLetterQueue`] captures every record
 //!    that fails a step, preserving the input, error message, and retry count
 //!    for later inspection or reprocessing.
@@ -57,6 +58,11 @@ fn now_ms() -> u64 {
         .unwrap_or(0)
 }
 
+/// Convert a [`std::sync::PoisonError`] into a [`PipelineError::LockPoisoned`].
+fn lock_err<T>(e: std::sync::PoisonError<T>) -> PipelineError {
+    PipelineError::LockPoisoned(e.to_string())
+}
+
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -101,6 +107,10 @@ pub enum PipelineError {
         /// Error detail.
         reason: String,
     },
+
+    /// An internal mutex was poisoned by a panicking thread.
+    #[error("internal lock poisoned: {0}")]
+    LockPoisoned(String),
 }
 
 // ===========================================================================
@@ -367,18 +377,23 @@ impl DeadLetterQueue {
     }
 
     /// Enqueue a dead-letter entry.
-    pub fn enqueue(&self, entry: DeadLetterEntry) {
+    ///
+    /// Returns `Err(PipelineError::LockPoisoned)` if the internal mutex has
+    /// been poisoned by a panicking thread.  All other callers must handle or
+    /// propagate this error.
+    pub fn enqueue(&self, entry: DeadLetterEntry) -> Result<(), PipelineError> {
         self.entries
             .lock()
-            .expect("dlq lock poisoned")
+            .map_err(lock_err)?
             .push(entry);
+        Ok(())
     }
 
     /// Return all entries for a specific pipeline.
     pub fn entries_for_pipeline(&self, pipeline_id: Uuid) -> Vec<DeadLetterEntry> {
         self.entries
             .lock()
-            .expect("dlq lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .iter()
             .filter(|e| e.pipeline_id == pipeline_id)
             .cloned()
@@ -388,13 +403,13 @@ impl DeadLetterQueue {
     /// Drain and return all entries (e.g., for batch reprocessing).
     pub fn drain(&self) -> Vec<DeadLetterEntry> {
         std::mem::take(
-            &mut *self.entries.lock().expect("dlq lock poisoned"),
+            &mut *self.entries.lock().unwrap_or_else(|p| p.into_inner()),
         )
     }
 
     /// Number of entries currently in the queue.
     pub fn len(&self) -> usize {
-        self.entries.lock().expect("dlq lock poisoned").len()
+        self.entries.lock().unwrap_or_else(|p| p.into_inner()).len()
     }
 
     /// Returns `true` when the queue is empty.
@@ -554,12 +569,10 @@ impl SchemaValidator {
         for field in &schema.fields {
             match obj.get(&field.name) {
                 None => {
-                    if !field.nullable {
-                        return Err(PipelineError::SchemaValidationFailed(format!(
-                            "required field '{}' is missing",
-                            field.name
-                        )));
-                    }
+                    return Err(PipelineError::SchemaValidationFailed(format!(
+                        "required field '{}' is missing",
+                        field.name
+                    )));
                 }
                 Some(val) => {
                     if matches!(val, serde_json::Value::Null) && !field.nullable {
@@ -598,18 +611,21 @@ impl SchemaRegistry {
     /// Register a new schema.  Returns the schema ID.
     pub fn register(&self, schema: DataSchema) -> Uuid {
         let id = schema.id;
-        self.schemas.lock().expect("schema registry lock poisoned").insert(id, schema);
+        self.schemas
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .insert(id, schema);
         id
     }
 
     /// Look up a schema by ID.
     pub fn get(&self, id: Uuid) -> Option<DataSchema> {
-        self.schemas.lock().expect("schema registry lock poisoned").get(&id).cloned()
+        self.schemas.lock().unwrap_or_else(|p| p.into_inner()).get(&id).cloned()
     }
 
     /// Return all registered schemas.
     pub fn all(&self) -> Vec<DataSchema> {
-        self.schemas.lock().expect("schema registry lock poisoned").values().cloned().collect()
+        self.schemas.lock().unwrap_or_else(|p| p.into_inner()).values().cloned().collect()
     }
 }
 
@@ -766,7 +782,7 @@ impl CheckpointStore {
     pub fn save(&self, checkpoint: PipelineCheckpoint) {
         self.checkpoints
             .lock()
-            .expect("checkpoint store lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .insert(checkpoint.pipeline_id, checkpoint);
     }
 
@@ -774,7 +790,7 @@ impl CheckpointStore {
     pub fn get(&self, pipeline_id: Uuid) -> Option<PipelineCheckpoint> {
         self.checkpoints
             .lock()
-            .expect("checkpoint store lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .get(&pipeline_id)
             .cloned()
     }
@@ -783,7 +799,7 @@ impl CheckpointStore {
     pub fn clear(&self, pipeline_id: Uuid) -> bool {
         self.checkpoints
             .lock()
-            .expect("checkpoint store lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .remove(&pipeline_id)
             .is_some()
     }
@@ -868,14 +884,14 @@ impl LineageTracker {
             serde_json::json!({
                 "pipeline_id": entry.pipeline_id,
                 "step_id": entry.step_id,
-                "step_name": entry.step_name,
+                "step_name": entry.step_name.clone(),
                 "output_artifact_id": entry.output_artifact_id.to_string(),
                 "transform_version": entry.transform_version,
             }),
         ));
         self.records
             .lock()
-            .expect("lineage tracker lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .push(entry);
     }
 
@@ -883,7 +899,7 @@ impl LineageTracker {
     pub fn records_for_pipeline(&self, pipeline_id: Uuid) -> Vec<LineageRecord> {
         self.records
             .lock()
-            .expect("lineage tracker lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .iter()
             .filter(|r| r.pipeline_id == pipeline_id)
             .cloned()
@@ -894,7 +910,7 @@ impl LineageTracker {
     pub fn records_for_artifact(&self, artifact_id: ArtifactId) -> Vec<LineageRecord> {
         self.records
             .lock()
-            .expect("lineage tracker lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .iter()
             .filter(|r| r.output_artifact_id == artifact_id)
             .cloned()
@@ -903,7 +919,7 @@ impl LineageTracker {
 
     /// Total number of lineage records stored.
     pub fn len(&self) -> usize {
-        self.records.lock().expect("lineage tracker lock poisoned").len()
+        self.records.lock().unwrap_or_else(|p| p.into_inner()).len()
     }
 
     /// Returns `true` when no lineage records have been stored.
@@ -983,7 +999,7 @@ impl PipelineOptimizer {
     pub fn record_sample(&self, sample: PipelineMetrics) {
         self.history
             .lock()
-            .expect("optimizer lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .push(sample);
     }
 
@@ -996,7 +1012,7 @@ impl PipelineOptimizer {
     ///   the batch size.
     /// - Otherwise, no change.
     pub fn advise(&self, current: &BatchConfig) -> OptimizationAdvice {
-        let history = self.history.lock().expect("optimizer lock poisoned");
+        let history = self.history.lock().unwrap_or_else(|p| p.into_inner());
         if let Some(last) = history.last() {
             if last.throughput_rps < 500.0 && current.parallelism < 16 {
                 return OptimizationAdvice {
@@ -1029,7 +1045,7 @@ impl PipelineOptimizer {
 
     /// Number of metric samples stored.
     pub fn sample_count(&self) -> usize {
-        self.history.lock().expect("optimizer lock poisoned").len()
+        self.history.lock().unwrap_or_else(|p| p.into_inner()).len()
     }
 }
 
@@ -1223,7 +1239,7 @@ impl PipelineBuilderRegistry {
     pub fn register(&self, node: PipelineBuilderNode) {
         self.templates
             .lock()
-            .expect("builder registry lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .insert(node.id, node);
     }
 
@@ -1231,7 +1247,7 @@ impl PipelineBuilderRegistry {
     pub fn get(&self, id: Uuid) -> Option<PipelineBuilderNode> {
         self.templates
             .lock()
-            .expect("builder registry lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .get(&id)
             .cloned()
     }
@@ -1240,7 +1256,7 @@ impl PipelineBuilderRegistry {
     pub fn all(&self) -> Vec<PipelineBuilderNode> {
         self.templates
             .lock()
-            .expect("builder registry lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .values()
             .cloned()
             .collect()
@@ -1248,7 +1264,7 @@ impl PipelineBuilderRegistry {
 
     /// Number of registered templates.
     pub fn len(&self) -> usize {
-        self.templates.lock().expect("builder registry lock poisoned").len()
+        self.templates.lock().unwrap_or_else(|p| p.into_inner()).len()
     }
 
     /// Returns `true` when no templates are registered.
@@ -1371,14 +1387,14 @@ impl StorageConnectorRegistry {
                 None,
                 serde_json::json!({
                     "connector_id": id,
-                    "name": connector.name,
+                    "name": connector.name.clone(),
                     "kind": connector.kind.as_str(),
                 }),
             ));
         }
         self.connectors
             .lock()
-            .expect("connector registry lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .insert(id, connector);
         id
     }
@@ -1387,7 +1403,7 @@ impl StorageConnectorRegistry {
     pub fn get(&self, id: Uuid) -> Option<StorageConnector> {
         self.connectors
             .lock()
-            .expect("connector registry lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .get(&id)
             .cloned()
     }
@@ -1396,7 +1412,7 @@ impl StorageConnectorRegistry {
     pub fn all(&self) -> Vec<StorageConnector> {
         self.connectors
             .lock()
-            .expect("connector registry lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .values()
             .cloned()
             .collect()
@@ -1406,14 +1422,14 @@ impl StorageConnectorRegistry {
     pub fn remove(&self, id: Uuid) -> bool {
         self.connectors
             .lock()
-            .expect("connector registry lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .remove(&id)
             .is_some()
     }
 
     /// Number of registered connectors.
     pub fn len(&self) -> usize {
-        self.connectors.lock().expect("connector registry lock poisoned").len()
+        self.connectors.lock().unwrap_or_else(|p| p.into_inner()).len()
     }
 
     /// Returns `true` when no connectors are registered.
@@ -1476,6 +1492,7 @@ impl PipelineRegistry {
     pub fn register_pipeline(&self, pipeline: Pipeline) -> Uuid {
         let id = pipeline.id;
         let dim = pipeline.dimension_id;
+        let name = pipeline.name.clone();
         self.log.append(ActionLogEntry::new(
             EventType::PipelineCreated,
             Actor::System,
@@ -1483,11 +1500,14 @@ impl PipelineRegistry {
             None,
             serde_json::json!({
                 "pipeline_id": id,
-                "name": pipeline.name,
+                "name": name,
                 "version": pipeline.version,
             }),
         ));
-        self.pipelines.lock().expect("pipeline registry lock poisoned").insert(id, pipeline);
+        self.pipelines
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .insert(id, pipeline);
         id
     }
 
@@ -1495,7 +1515,7 @@ impl PipelineRegistry {
     pub fn get_pipeline(&self, id: Uuid) -> Result<Pipeline, PipelineError> {
         self.pipelines
             .lock()
-            .expect("pipeline registry lock poisoned")
+            .map_err(lock_err)?
             .get(&id)
             .cloned()
             .ok_or(PipelineError::PipelineNotFound(id))
@@ -1525,11 +1545,14 @@ impl PipelineRegistry {
         ));
         self.versions
             .lock()
-            .expect("versions lock poisoned")
+            .map_err(lock_err)?
             .entry(id)
             .or_default()
             .push(version.clone());
-        self.pipelines.lock().expect("pipeline registry lock poisoned").insert(id, pipeline);
+        self.pipelines
+            .lock()
+            .map_err(lock_err)?
+            .insert(id, pipeline);
         Ok(version)
     }
 
@@ -1541,7 +1564,7 @@ impl PipelineRegistry {
     pub fn versions_for_pipeline(&self, pipeline_id: Uuid) -> Vec<TransformVersion> {
         self.versions
             .lock()
-            .expect("versions lock poisoned")
+            .unwrap_or_else(|p| p.into_inner())
             .get(&pipeline_id)
             .cloned()
             .unwrap_or_default()
@@ -1556,13 +1579,16 @@ impl PipelineRegistry {
         &self,
         req: TransformReplayRequest,
     ) -> Result<(TransformVersion, Vec<serde_json::Value>), PipelineError> {
-        let versions = self.versions.lock().expect("versions lock poisoned");
-        let pipeline_versions = versions
+        // Verify the pipeline exists before consulting the versions map.
+        // `get_pipeline` acquires and fully releases the `pipelines` lock before
+        // returning, so there is no lock-ordering issue with the subsequent
+        // `versions` lock acquisition below.
+        self.get_pipeline(req.pipeline_id)?;
+
+        let versions = self.versions.lock().map_err(lock_err)?;
+        let version = versions
             .get(&req.pipeline_id)
-            .ok_or(PipelineError::PipelineNotFound(req.pipeline_id))?;
-        let version = pipeline_versions
-            .iter()
-            .find(|v| v.version == req.version)
+            .and_then(|v| v.iter().find(|tv| tv.version == req.version))
             .ok_or(PipelineError::VersionNotFound {
                 pipeline_id: req.pipeline_id,
                 version: req.version,
@@ -1742,6 +1768,30 @@ mod tests {
         assert_eq!(records.len(), 1);
     }
 
+    #[test]
+    fn replay_version_missing_versions_returns_version_not_found() {
+        // A pipeline with no saved versions should produce VersionNotFound,
+        // not PipelineNotFound.
+        let log = make_log();
+        let registry = PipelineRegistry::new(Arc::clone(&log));
+        let dim = DimensionId::new();
+        let pipeline = Pipeline::new("no-versions", dim);
+        let pipeline_id = registry.register_pipeline(pipeline);
+
+        let req = TransformReplayRequest {
+            pipeline_id,
+            version: 1,
+            input_records: vec![],
+            task_id: TaskId::new(),
+        };
+        let result = registry.replay_version(req);
+        assert!(
+            matches!(result, Err(PipelineError::VersionNotFound { .. })),
+            "expected VersionNotFound but got: {:?}",
+            result,
+        );
+    }
+
     // -----------------------------------------------------------------------
     // Item 3 — Dead-letter queue
     // -----------------------------------------------------------------------
@@ -1757,7 +1807,7 @@ mod tests {
             serde_json::json!({"record": "bad"}),
             "parse error",
             DeadLetterReason::StepError,
-        ));
+        )).unwrap();
         assert_eq!(dlq.len(), 1);
         assert_eq!(dlq.entries_for_pipeline(pipeline_id).len(), 1);
         let drained = dlq.drain();
@@ -1802,6 +1852,17 @@ mod tests {
         let schema = SchemaInferrer::infer("t", &sample);
         let bad_record = serde_json::json!({"id": "not-an-int", "name": "carol"});
         let result = SchemaValidator::validate(&bad_record, &schema);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn schema_validation_fails_missing_field() {
+        let sample = serde_json::json!({"id": 1, "name": "bob"});
+        let schema = SchemaInferrer::infer("t", &sample);
+        // Record is missing the "name" field — should always fail even though
+        // nullable is false (nullable controls null values, not field absence).
+        let missing_field = serde_json::json!({"id": 1});
+        let result = SchemaValidator::validate(&missing_field, &schema);
         assert!(result.is_err());
     }
 
