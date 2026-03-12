@@ -212,6 +212,29 @@ pub enum EventType {
     PipelineLineageRecorded,
     /// A storage connector was registered.
     StorageConnectorRegistered,
+    // --- Security / privileged action events (Epic O §3.8) ---
+    /// A secret value was read by a privileged principal.
+    PrivilegedReadSecret,
+    /// A deployment was triggered by a privileged principal.
+    PrivilegedDeploy,
+    /// A capability grant or revocation was performed.
+    PrivilegedCapabilityChange,
+    /// An administrative configuration change was applied.
+    PrivilegedAdminChange,
+    /// A marketplace publication was performed.
+    PrivilegedMarketplacePublish,
+    /// An access request was denied by the policy engine.
+    SecurityAccessDenied,
+    /// An input validation failure was detected at a boundary layer.
+    SecurityValidationFailed,
+    /// A sandbox violation was attempted by a tool.
+    SecuritySandboxViolation,
+    /// An artifact signature was verified successfully.
+    SecurityArtifactVerified,
+    /// An artifact signature verification failed.
+    SecurityArtifactVerificationFailed,
+    /// A supply chain component signature was verified.
+    SecuritySupplyChainVerified,
 }
 
 impl EventType {
@@ -287,6 +310,17 @@ impl EventType {
             Self::PipelineResumed => "pipeline.resumed",
             Self::PipelineLineageRecorded => "pipeline.lineage_recorded",
             Self::StorageConnectorRegistered => "storage_connector.registered",
+            Self::PrivilegedReadSecret => "privileged.read_secret",
+            Self::PrivilegedDeploy => "privileged.deploy",
+            Self::PrivilegedCapabilityChange => "privileged.capability_change",
+            Self::PrivilegedAdminChange => "privileged.admin_change",
+            Self::PrivilegedMarketplacePublish => "privileged.marketplace_publish",
+            Self::SecurityAccessDenied => "security.access_denied",
+            Self::SecurityValidationFailed => "security.validation_failed",
+            Self::SecuritySandboxViolation => "security.sandbox_violation",
+            Self::SecurityArtifactVerified => "security.artifact_verified",
+            Self::SecurityArtifactVerificationFailed => "security.artifact_verification_failed",
+            Self::SecuritySupplyChainVerified => "security.supply_chain_verified",
         }
     }
 }

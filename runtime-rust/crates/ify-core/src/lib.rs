@@ -230,6 +230,32 @@ bitflags::bitflags! {
         const PERF      = 1 << 4;
         /// GPU / accelerator access.
         const GPU       = 1 << 5;
+        /// Filesystem write access (requires explicit grant).
+        const FS_WRITE  = 1 << 8;
+        /// Network ingress (listen) access.
+        const NET_INGRESS = 1 << 9;
+        /// Permission to submit tasks to the scheduler.
+        const SPAWN_TASKS = 1 << 16;
+        /// Permission to create child dimensions.
+        const SPAWN_DIMENSIONS = 1 << 17;
+        /// Read artifacts from the mesh.
+        const READ_ARTIFACTS = 1 << 18;
+        /// Write artifacts to the mesh.
+        const WRITE_ARTIFACTS = 1 << 19;
+        /// Invoke registered tools (DB, HTTP, model, blockchain).
+        const INVOKE_TOOLS = 1 << 20;
+        /// Invoke ML model inference.
+        const INVOKE_MODEL = 1 << 21;
+        /// Trigger deployment workflows.
+        const DEPLOY = 1 << 22;
+        /// Read environment configuration (non-secret).
+        const READ_ENV = 1 << 32;
+        /// Read secrets (requires operator approval).
+        const READ_SECRETS = 1 << 33;
+        /// Publish to the agent/snippet marketplace.
+        const PUBLISH_MARKETPLACE = 1 << 34;
+        /// Full administrative access (reserved for system agents).
+        const ADMIN = 1 << 63;
     }
 }
 
