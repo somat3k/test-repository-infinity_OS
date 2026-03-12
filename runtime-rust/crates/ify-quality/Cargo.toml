@@ -1,0 +1,19 @@
+[package]
+name        = "ify-quality"
+description = "infinityOS — Quality Engineering: test strategy, deterministic datasets, quality gates, fuzz infrastructure, SAST/DAST, contract tests, golden tests, load tests, test reporting, and RC checklist."
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+authors.workspace     = true
+repository.workspace  = true
+rust-version.workspace = true
+
+[dependencies]
+ify-core       = { workspace = true }
+ify-controller = { workspace = true }
+ify-interfaces = { workspace = true }
+thiserror  = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+uuid       = { workspace = true }
+tracing    = { workspace = true }

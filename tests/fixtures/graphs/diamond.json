@@ -1,0 +1,16 @@
+{
+  "id": "diamond",
+  "description": "Diamond graph: A -> B, A -> C, B -> D, C -> D",
+  "nodes": [
+    { "id": "A", "label": "Root",  "metadata": {} },
+    { "id": "B", "label": "Left",  "metadata": {} },
+    { "id": "C", "label": "Right", "metadata": {} },
+    { "id": "D", "label": "Join",  "metadata": {} }
+  ],
+  "edges": [
+    { "from": "A", "to": "B", "label": "left"  },
+    { "from": "A", "to": "C", "label": "right" },
+    { "from": "B", "to": "D", "label": "merge" },
+    { "from": "C", "to": "D", "label": "merge" }
+  ]
+}

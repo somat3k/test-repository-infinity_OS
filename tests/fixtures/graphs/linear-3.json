@@ -1,0 +1,13 @@
+{
+  "id": "linear-3",
+  "description": "Straight-line graph: A -> B -> C",
+  "nodes": [
+    { "id": "A", "label": "Start",     "metadata": { "kind": "source"  } },
+    { "id": "B", "label": "Transform", "metadata": { "kind": "process" } },
+    { "id": "C", "label": "Sink",      "metadata": { "kind": "sink"    } }
+  ],
+  "edges": [
+    { "from": "A", "to": "B", "label": "flow" },
+    { "from": "B", "to": "C", "label": "flow" }
+  ]
+}

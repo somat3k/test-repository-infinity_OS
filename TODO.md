@@ -200,16 +200,16 @@ Implementation plan and highlights: [`docs/architecture/epic-i-implementation.md
 - [x] Add connectors to DB and object storage. (Owner: copilot, 2026-03-11) → runtime-rust/crates/ify-controller/src/pipeline.rs (`StorageConnectorKind`, `StorageConnector`, `StorageConnectorRegistry`)
 
 ## Q. Quality Engineering
-- [ ] Add unit/integration/performance test strategy.
-- [ ] Add deterministic test datasets for graph/data paths.
-- [ ] Set quality gates for merge readiness.
-- [ ] Add fuzz testing for parsers/serializers.
-- [ ] Add security testing (SAST/DAST) pipeline.
-- [ ] Add contract tests for interfaces (IDL).
-- [ ] Add golden tests for UI layouts.
-- [ ] Add load tests for orchestrator and mesh.
-- [ ] Add test reporting widgets.
-- [ ] Add release candidate validation checklist.
+- [x] Add unit/integration/performance test strategy. (Owner: copilot, 2026-03-12) → docs/quality/test-strategy.md + ify-quality::strategy
+- [x] Add deterministic test datasets for graph/data paths. (Owner: copilot, 2026-03-12) → tests/fixtures/graphs/, tests/fixtures/datasets/, ify-quality::datasets
+- [x] Set quality gates for merge readiness. (Owner: copilot, 2026-03-12) → docs/quality/quality-gates.md + ify-quality::gates
+- [x] Add fuzz testing for parsers/serializers. (Owner: copilot, 2026-03-12) → ify-quality::fuzz (FuzzRegistry, FuzzTarget, CorpusEntry)
+- [x] Add security testing (SAST/DAST) pipeline. (Owner: copilot, 2026-03-12) → ify-quality::security_testing (SecurityPipeline, ScannerConfig, SecurityFinding)
+- [x] Add contract tests for interfaces (IDL). (Owner: copilot, 2026-03-12) → ify-quality::contract (ContractRegistry, ContractTestRunner, ProbeResult)
+- [x] Add golden tests for UI layouts. (Owner: copilot, 2026-03-12) → ify-quality::golden (GoldenStore, CanvasLayoutFixtures, LayoutNode)
+- [x] Add load tests for orchestrator and mesh. (Owner: copilot, 2026-03-12) → ify-quality::load (LoadScenarioRegistry, LoadRunner, LoadResult)
+- [x] Add test reporting widgets. (Owner: copilot, 2026-03-12) → ify-quality::report (TestReportSnapshot, TestReportWidget)
+- [x] Add release candidate validation checklist. (Owner: copilot, 2026-03-12) → docs/quality/release-candidate-checklist.md + ify-quality::rc_checklist
 
 ## R. Rust Performer Runtime
 - [ ] Scaffold runtime crates and workspace.
